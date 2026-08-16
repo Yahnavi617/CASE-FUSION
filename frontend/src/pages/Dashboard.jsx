@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getCases } from '../services/api';
 
 function Dashboard({ onNewInvestigation, onOpenCase }) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // NEW: search and filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     loadCases();
@@ -43,6 +47,37 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
     0
   );
 
+  // NEW: filtered cases
+  const filteredCases = useMemo(() => {
+    const search = searchTerm
+      .trim()
+      .toLowerCase();
+
+    return cases.filter((item) => {
+      const matchesSearch =
+        !search ||
+        item.name
+          ?.toLowerCase()
+          .includes(search) ||
+        item.caseId
+          ?.toLowerCase()
+          .includes(search);
+
+      const matchesStatus =
+        statusFilter === 'all' ||
+        item.status === statusFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus
+      );
+    });
+  }, [
+    cases,
+    searchTerm,
+    statusFilter,
+  ]);
+
   return (
     <div className="app">
       <header className="topbar">
@@ -51,6 +86,7 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
 
           <div>
             <h1>CASEFUSION</h1>
+
             <p>
               Investigation Intelligence Platform
             </p>
@@ -87,7 +123,9 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
           <div className="stat-card">
             <span>Total Cases</span>
 
-            <strong>{cases.length}</strong>
+            <strong>
+              {cases.length}
+            </strong>
 
             <small>
               Investigations created
@@ -155,6 +193,127 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
           )}
 
           {!loading &&
+            cases.length > 0 && (
+              <>
+                {/* =========================
+                    SEARCH + FILTER
+                ========================== */}
+
+                <div className="case-controls">
+                  <div className="case-search">
+                    <span className="case-search-icon">
+                      ⌕
+                    </span>
+
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(event) =>
+                        setSearchTerm(
+                          event.target.value
+                        )
+                      }
+                      placeholder="Search investigations or Case ID..."
+                    />
+
+                    {searchTerm && (
+                      <button
+                        type="button"
+                        className="clear-search"
+                        onClick={() =>
+                          setSearchTerm('')
+                        }
+                        aria-label="Clear search"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="case-filters">
+                    <button
+                      type="button"
+                      className={`case-filter-btn ${
+                        statusFilter === 'all'
+                          ? 'active'
+                          : ''
+                      }`}
+                      onClick={() =>
+                        setStatusFilter('all')
+                      }
+                    >
+                      All
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`case-filter-btn ${
+                        statusFilter === 'analyzed'
+                          ? 'active'
+                          : ''
+                      }`}
+                      onClick={() =>
+                        setStatusFilter(
+                          'analyzed'
+                        )
+                      }
+                    >
+                      Analyzed
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`case-filter-btn ${
+                        statusFilter === 'uploaded'
+                          ? 'active'
+                          : ''
+                      }`}
+                      onClick={() =>
+                        setStatusFilter(
+                          'uploaded'
+                        )
+                      }
+                    >
+                      Uploaded
+                    </button>
+                  </div>
+                </div>
+
+                {/* =========================
+                    FILTER RESULT COUNT
+                ========================== */}
+
+                <div className="case-results-info">
+                  <span>
+                    Showing{' '}
+                    <strong>
+                      {filteredCases.length}
+                    </strong>{' '}
+                    of{' '}
+                    <strong>
+                      {cases.length}
+                    </strong>{' '}
+                    investigations
+                  </span>
+
+                  {(searchTerm ||
+                    statusFilter !== 'all') && (
+                    <button
+                      type="button"
+                      className="clear-filters-btn"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setStatusFilter('all');
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
+          {!loading &&
             cases.length === 0 && (
               <div className="empty-state">
                 <div className="empty-icon">
@@ -183,9 +342,38 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
             )}
 
           {!loading &&
-            cases.length > 0 && (
+            cases.length > 0 &&
+            filteredCases.length === 0 && (
+              <div className="empty-state filtered-empty-state">
+                <div className="empty-icon">
+                  ⌕
+                </div>
+
+                <h3>
+                  No matching investigations
+                </h3>
+
+                <p>
+                  Try changing your search or
+                  status filter.
+                </p>
+
+                <button
+                  className="primary-btn"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('all');
+                  }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+
+          {!loading &&
+            filteredCases.length > 0 && (
               <div className="cases-list">
-                {cases.map((item) => (
+                {filteredCases.map((item) => (
                   <button
                     className="case-row"
                     key={item.caseId}

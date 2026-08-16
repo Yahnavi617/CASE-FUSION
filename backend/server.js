@@ -1104,7 +1104,366 @@ app.get(
     }
 
 );
+// =====================================================
+// GET NETWORK GRAPH FOR SPECIFIC CASE
+// =====================================================
 
+app.get(
+    '/api/cases/:caseId/network',
+    (req, res) => {
+
+        try {
+
+            const { caseId } = req.params;
+
+            // -----------------------------------------
+            // FIND CASE
+            // -----------------------------------------
+
+            const caseDir = path.join(
+                CASES_DIR,
+                caseId
+            );
+
+            if (!fs.existsSync(caseDir)) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message: 'Case not found'
+
+                });
+
+            }
+
+            // -----------------------------------------
+            // CSV PATHS
+            // -----------------------------------------
+
+            const cdrPath = path.join(
+                caseDir,
+                'CDR.csv'
+            );
+
+            const bankPath = path.join(
+                caseDir,
+                'Bank.csv'
+            );
+
+            const socialPath = path.join(
+                caseDir,
+                'Social.csv'
+            );
+
+            const entitiesPath = path.join(
+                caseDir,
+                'Entities.csv'
+            );
+
+            if (
+                !fs.existsSync(cdrPath) ||
+                !fs.existsSync(bankPath) ||
+                !fs.existsSync(socialPath) ||
+                !fs.existsSync(entitiesPath)
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        'Required case CSV files are missing'
+
+                });
+
+            }
+
+            // -----------------------------------------
+            // READ DATA
+            // -----------------------------------------
+
+            const cdrRows = parseCSV(cdrPath);
+            const bankRows = parseCSV(bankPath);
+            const socialRows = parseCSV(socialPath);
+            const entityRows = parseCSV(entitiesPath);
+
+            const entityMap =
+                buildEntityMap(entityRows);
+
+            const entityIds =
+                Object.keys(entityMap);
+
+            // -----------------------------------------
+            // LOOKUP MAPS
+            // -----------------------------------------
+
+            const accountToId = {};
+            const phoneToId = {};
+            const handleToId = {};
+
+            entityIds.forEach(id => {
+
+                const entity = entityMap[id];
+
+                if (entity.account) {
+                    accountToId[entity.account] = id;
+                }
+
+                if (entity.phone) {
+                    phoneToId[entity.phone] = id;
+                }
+
+                if (entity.handle) {
+                    handleToId[entity.handle] = id;
+                }
+
+            });
+
+            // -----------------------------------------
+            // NODES
+            // -----------------------------------------
+
+            const nodes = entityIds.map(id => {
+
+                const entity = entityMap[id];
+
+                return {
+
+                    id,
+
+                    label: entity.label,
+
+                    type: 'entity',
+
+                    knownSuspect:
+                        entity.knownSuspect
+
+                };
+
+            });
+
+            // -----------------------------------------
+            // EDGES
+            // -----------------------------------------
+
+            const edges = [];
+
+            const edgeKeys = new Set();
+
+            function addEdge(
+                source,
+                target,
+                type,
+                label
+            ) {
+
+                if (
+                    !source ||
+                    !target ||
+                    source === target
+                ) {
+                    return;
+                }
+
+                const key = [
+                    source,
+                    target,
+                    type
+                ].sort().join('|');
+
+                if (edgeKeys.has(key)) {
+                    return;
+                }
+
+                edgeKeys.add(key);
+
+                edges.push({
+
+                    id:
+                        `edge-${edges.length + 1}`,
+
+                    source,
+
+                    target,
+
+                    type,
+
+                    label
+
+                });
+
+            }
+
+            // -----------------------------------------
+            // BANK CONNECTIONS
+            // -----------------------------------------
+
+            bankRows.forEach(transaction => {
+
+                const fromId =
+                    accountToId[
+                        transaction.from_account
+                    ];
+
+                const toId =
+                    accountToId[
+                        transaction.to_account
+                    ];
+
+                if (fromId && toId) {
+
+                    addEdge(
+                        fromId,
+                        toId,
+                        'financial',
+                        'Bank transaction'
+                    );
+
+                }
+
+            });
+
+            // -----------------------------------------
+            // CDR CONNECTIONS
+            // -----------------------------------------
+
+            cdrRows.forEach(call => {
+
+                const callerId =
+                    phoneToId[
+                        call.caller
+                    ];
+
+                const receiverId =
+                    phoneToId[
+                        call.receiver
+                    ];
+
+                if (
+                    callerId &&
+                    receiverId
+                ) {
+
+                    addEdge(
+                        callerId,
+                        receiverId,
+                        'communication',
+                        'Phone call'
+                    );
+
+                }
+
+            });
+
+            // -----------------------------------------
+            // SHARED DEVICE CONNECTIONS
+            // -----------------------------------------
+
+            const deviceToIds = {};
+
+            socialRows.forEach(social => {
+
+                const entityId =
+                    handleToId[
+                        social.handle
+                    ];
+
+                if (!entityId) {
+                    return;
+                }
+
+                if (!deviceToIds[social.device_id]) {
+
+                    deviceToIds[
+                        social.device_id
+                    ] = [];
+
+                }
+
+                if (
+                    !deviceToIds[
+                        social.device_id
+                    ].includes(entityId)
+                ) {
+
+                    deviceToIds[
+                        social.device_id
+                    ].push(entityId);
+
+                }
+
+            });
+
+            Object.entries(deviceToIds)
+                .forEach(
+                    ([deviceId, ids]) => {
+
+                        for (
+                            let i = 0;
+                            i < ids.length;
+                            i++
+                        ) {
+
+                            for (
+                                let j = i + 1;
+                                j < ids.length;
+                                j++
+                            ) {
+
+                                addEdge(
+                                    ids[i],
+                                    ids[j],
+                                    'device',
+                                    `Shared device ${deviceId}`
+                                );
+
+                            }
+
+                        }
+
+                    }
+                );
+
+            // -----------------------------------------
+            // RESPONSE
+            // -----------------------------------------
+
+            return res.json({
+
+                success: true,
+
+                caseId,
+
+                nodes,
+
+                edges
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                'Network graph error:',
+                error
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Failed to build network graph'
+
+            });
+
+        }
+
+    }
+
+);
 
 // =====================================================
 // GET LEADS FOR SPECIFIC CASE

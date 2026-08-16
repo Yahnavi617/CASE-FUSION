@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import NetworkGraph from '../components/NetworkGraph';
 import LeadExplanation from '../components/LeadExplanation';
 
@@ -18,6 +18,13 @@ function CaseWorkspace({ caseId, onBack }) {
   const [selectedLead, setSelectedLead] = useState(null);
 
   const [error, setError] = useState('');
+
+  /* =====================================================
+     NEW: LEAD FILTER + SORT
+     ===================================================== */
+
+  const [riskFilter, setRiskFilter] = useState('all');
+  const [scoreSort, setScoreSort] = useState('high-to-low');
 
   useEffect(() => {
     loadCase();
@@ -214,6 +221,55 @@ function CaseWorkspace({ caseId, onBack }) {
 
     URL.revokeObjectURL(url);
   }
+
+  /* =====================================================
+     NEW: FILTERED + SORTED LEADS
+     ===================================================== */
+
+  const displayedLeads = useMemo(() => {
+    const filtered = leads.filter(
+      (lead) => {
+        const score =
+          Number(lead.score) || 0;
+
+        if (riskFilter === 'high') {
+          return score >= 80;
+        }
+
+        if (riskFilter === 'medium') {
+          return score >= 50 && score < 80;
+        }
+
+        if (riskFilter === 'low') {
+          return score < 50;
+        }
+
+        return true;
+      }
+    );
+
+    return [...filtered].sort(
+      (a, b) => {
+        const scoreA =
+          Number(a.score) || 0;
+
+        const scoreB =
+          Number(b.score) || 0;
+
+        if (
+          scoreSort === 'low-to-high'
+        ) {
+          return scoreA - scoreB;
+        }
+
+        return scoreB - scoreA;
+      }
+    );
+  }, [
+    leads,
+    riskFilter,
+    scoreSort,
+  ]);
 
   /* =====================================================
      LOADING
@@ -542,267 +598,433 @@ function CaseWorkspace({ caseId, onBack }) {
 
         {isAnalyzed &&
           leads.length > 0 && (
-            <div className="leads-list">
+            <>
 
-              {leads.map(
-                (lead, index) => {
+              {/* =================================================
+                  NEW: LEAD FILTERS + SORT
+                  ================================================= */}
 
-                  const score =
-                    Number(lead.score) || 0;
+              <div className="lead-controls">
 
-                  const riskLevel =
-                    score >= 80
-                      ? 'HIGH RISK'
-                      : score >= 50
-                        ? 'MEDIUM RISK'
-                        : 'LOW RISK';
+                <div className="lead-risk-filters">
 
-                  const riskClass =
-                    score >= 80
-                      ? 'high'
-                      : score >= 50
-                        ? 'medium'
-                        : 'low';
+                  <span className="lead-control-label">
+                    RISK
+                  </span>
 
-                  const signals =
-                    lead.signals || {};
+                  <button
+                    type="button"
+                    className={`lead-filter-button ${
+                      riskFilter === 'all'
+                        ? 'active'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      setRiskFilter('all')
+                    }
+                  >
+                    All
+                  </button>
 
-                  return (
-                    <div
-                      className="lead-card"
-                      key={lead.id}
-                    >
+                  <button
+                    type="button"
+                    className={`lead-filter-button ${
+                      riskFilter === 'high'
+                        ? 'active'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      setRiskFilter('high')
+                    }
+                  >
+                    High Risk
+                  </button>
 
-                      <div className="lead-rank">
-                        #{index + 1}
-                      </div>
+                  <button
+                    type="button"
+                    className={`lead-filter-button ${
+                      riskFilter === 'medium'
+                        ? 'active'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      setRiskFilter('medium')
+                    }
+                  >
+                    Medium Risk
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`lead-filter-button ${
+                      riskFilter === 'low'
+                        ? 'active'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      setRiskFilter('low')
+                    }
+                  >
+                    Low Risk
+                  </button>
+
+                </div>
 
 
-                      <div className="lead-main">
+                <label className="lead-sort-control">
 
-                        {/* =================================
-                            LEAD HEADER
-                            ================================= */}
+                  <span className="lead-control-label">
+                    SORT
+                  </span>
 
-                        <div className="lead-top">
+                  <select
+                    value={scoreSort}
+                    onChange={(event) =>
+                      setScoreSort(
+                        event.target.value
+                      )
+                    }
+                  >
+                    <option value="high-to-low">
+                      Score: High → Low
+                    </option>
 
-                          <div>
+                    <option value="low-to-high">
+                      Score: Low → High
+                    </option>
+                  </select>
 
-                            <span className="lead-id">
-                              {lead.id}
-                            </span>
+                </label>
 
-                            <h3>
-                              {lead.label}
-                            </h3>
+              </div>
 
-                            <span
-                              className={`lead-risk-badge risk-${riskClass}`}
-                            >
-                              {riskLevel}
-                            </span>
 
+              {/* =================================================
+                  FILTER RESULT COUNT
+                  ================================================= */}
+
+              <div className="lead-results-info">
+
+                Showing{' '}
+
+                <strong>
+                  {displayedLeads.length}
+                </strong>{' '}
+
+                of{' '}
+
+                <strong>
+                  {leads.length}
+                </strong>{' '}
+
+                leads
+
+              </div>
+
+
+              {/* =================================================
+                  NO FILTER RESULTS
+                  ================================================= */}
+
+              {displayedLeads.length === 0 && (
+                <div className="analysis-empty">
+
+                  <div className="analysis-icon">
+                    —
+                  </div>
+
+                  <h3>
+                    No leads match this filter
+                  </h3>
+
+                  <p>
+                    Try selecting another risk
+                    level.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="analyze-button"
+                    onClick={() =>
+                      setRiskFilter('all')
+                    }
+                  >
+                    Show All Leads
+                  </button>
+
+                </div>
+              )}
+
+
+              {/* =================================================
+                  FILTERED LEAD LIST
+                  ================================================= */}
+
+              {displayedLeads.length > 0 && (
+                <div className="leads-list">
+
+                  {displayedLeads.map(
+                    (lead, index) => {
+
+                      const score =
+                        Number(lead.score) || 0;
+
+                      const riskLevel =
+                        score >= 80
+                          ? 'HIGH RISK'
+                          : score >= 50
+                            ? 'MEDIUM RISK'
+                            : 'LOW RISK';
+
+                      const riskClass =
+                        score >= 80
+                          ? 'high'
+                          : score >= 50
+                            ? 'medium'
+                            : 'low';
+
+                      const signals =
+                        lead.signals || {};
+
+                      return (
+                        <div
+                          className="lead-card"
+                          key={lead.id}
+                        >
+
+                          <div className="lead-rank">
+                            #{index + 1}
                           </div>
 
 
-                          {/* SCORE */}
+                          <div className="lead-main">
 
-                          <div className="lead-score">
+                            {/* =================================
+                                LEAD HEADER
+                                ================================= */}
 
-                            <span>
-                              SCORE
-                            </span>
+                            <div className="lead-top">
 
-                            <strong>
-                              {score}
-                            </strong>
+                              <div>
 
-                            <div className="lead-score-bar">
+                                <span className="lead-id">
+                                  {lead.id}
+                                </span>
 
-                              <div
-                                className={`lead-score-fill score-${riskClass}`}
-                                style={{
-                                  width:
-                                    `${Math.min(
-                                      Math.max(
-                                        score,
+                                <h3>
+                                  {lead.label}
+                                </h3>
+
+                                <span
+                                  className={`lead-risk-badge risk-${riskClass}`}
+                                >
+                                  {riskLevel}
+                                </span>
+
+                              </div>
+
+
+                              {/* SCORE */}
+
+                              <div className="lead-score">
+
+                                <span>
+                                  SCORE
+                                </span>
+
+                                <strong>
+                                  {score}
+                                </strong>
+
+                                <div className="lead-score-bar">
+
+                                  <div
+                                    className={`lead-score-fill score-${riskClass}`}
+                                    style={{
+                                      width:
+                                        `${Math.min(
+                                          Math.max(
+                                            score,
+                                            0
+                                          ),
+                                          100
+                                        )}%`,
+                                    }}
+                                  />
+
+                                </div>
+
+                              </div>
+
+                            </div>
+
+
+                            {/* =================================
+                                SIGNALS
+                                ================================= */}
+
+                            <div className="signal-grid">
+
+                              <div>
+
+                                <span>
+                                  Financial
+                                </span>
+
+                                <strong>
+                                  {Math.round(
+                                    Number(
+                                      signals.financial ||
                                         0
-                                      ),
-                                      100
-                                    )}%`,
-                                }}
-                              />
+                                    ) * 100
+                                  )}
+                                </strong>
+
+                              </div>
+
+
+                              <div>
+
+                                <span>
+                                  Communication
+                                </span>
+
+                                <strong>
+                                  {Math.round(
+                                    Number(
+                                      signals.communication ||
+                                        0
+                                    ) * 100
+                                  )}
+                                </strong>
+
+                              </div>
+
+
+                              <div>
+
+                                <span>
+                                  Cross-source
+                                </span>
+
+                                <strong>
+                                  {Math.round(
+                                    Number(
+                                      signals.crossSource ||
+                                        0
+                                    ) * 100
+                                  )}
+                                </strong>
+
+                              </div>
+
+
+                              <div>
+
+                                <span>
+                                  Temporal
+                                </span>
+
+                                <strong>
+                                  {Math.round(
+                                    Number(
+                                      signals.temporal ||
+                                        0
+                                    ) * 100
+                                  )}
+                                </strong>
+
+                              </div>
+
+
+                              <div>
+
+                                <span>
+                                  Centrality
+                                </span>
+
+                                <strong>
+                                  {Math.round(
+                                    Number(
+                                      signals.centrality ||
+                                        0
+                                    ) * 100
+                                  )}
+                                </strong>
+
+                              </div>
+
+                            </div>
+
+
+                            {/* =================================
+                                REASONS
+                                ================================= */}
+
+                            {lead.reasons?.length >
+                              0 && (
+                              <div className="lead-reasons">
+
+                                <span>
+                                  KEY SIGNALS
+                                </span>
+
+                                <ul>
+
+                                  {lead.reasons
+                                    .slice(0, 2)
+                                    .map(
+                                      (
+                                        reason,
+                                        reasonIndex
+                                      ) => (
+                                        <li
+                                          key={
+                                            reasonIndex
+                                          }
+                                        >
+                                          {reason}
+                                        </li>
+                                      )
+                                    )}
+
+                                </ul>
+
+                              </div>
+                            )}
+
+
+                            {/* =================================
+                                VIEW WHY
+                                ================================= */}
+
+                            <div className="lead-actions">
+
+                              <button
+                                type="button"
+                                className="why-button"
+                                onClick={() =>
+                                  handleViewWhy(
+                                    lead
+                                  )
+                                }
+                              >
+                                View Why →
+                              </button>
 
                             </div>
 
                           </div>
 
                         </div>
+                      );
+                    }
+                  )}
 
-
-                        {/* =================================
-                            SIGNALS
-                            ================================= */}
-
-                        <div className="signal-grid">
-
-                          <div>
-
-                            <span>
-                              Financial
-                            </span>
-
-                            <strong>
-                              {Math.round(
-                                Number(
-                                  signals.financial ||
-                                    0
-                                ) * 100
-                              )}
-                            </strong>
-
-                          </div>
-
-
-                          <div>
-
-                            <span>
-                              Communication
-                            </span>
-
-                            <strong>
-                              {Math.round(
-                                Number(
-                                  signals.communication ||
-                                    0
-                                ) * 100
-                              )}
-                            </strong>
-
-                          </div>
-
-
-                          <div>
-
-                            <span>
-                              Cross-source
-                            </span>
-
-                            <strong>
-                              {Math.round(
-                                Number(
-                                  signals.crossSource ||
-                                    0
-                                ) * 100
-                              )}
-                            </strong>
-
-                          </div>
-
-
-                          <div>
-
-                            <span>
-                              Temporal
-                            </span>
-
-                            <strong>
-                              {Math.round(
-                                Number(
-                                  signals.temporal ||
-                                    0
-                                ) * 100
-                              )}
-                            </strong>
-
-                          </div>
-
-
-                          <div>
-
-                            <span>
-                              Centrality
-                            </span>
-
-                            <strong>
-                              {Math.round(
-                                Number(
-                                  signals.centrality ||
-                                    0
-                                ) * 100
-                              )}
-                            </strong>
-
-                          </div>
-
-                        </div>
-
-
-                        {/* =================================
-                            REASONS
-                            ================================= */}
-
-                        {lead.reasons?.length >
-                          0 && (
-                          <div className="lead-reasons">
-
-                            <span>
-                              KEY SIGNALS
-                            </span>
-
-                            <ul>
-
-                              {lead.reasons
-                                .slice(0, 2)
-                                .map(
-                                  (
-                                    reason,
-                                    reasonIndex
-                                  ) => (
-                                    <li
-                                      key={
-                                        reasonIndex
-                                      }
-                                    >
-                                      {reason}
-                                    </li>
-                                  )
-                                )}
-
-                            </ul>
-
-                          </div>
-                        )}
-
-
-                        {/* =================================
-                            VIEW WHY
-                            ================================= */}
-
-                        <div className="lead-actions">
-
-                          <button
-                            type="button"
-                            className="why-button"
-                            onClick={() =>
-                              handleViewWhy(
-                                lead
-                              )
-                            }
-                          >
-                            View Why →
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-                  );
-                }
+                </div>
               )}
 
-            </div>
+            </>
           )}
 
       </section>

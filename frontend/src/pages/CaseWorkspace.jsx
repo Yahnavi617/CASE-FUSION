@@ -373,171 +373,242 @@ function CaseWorkspace({ caseId, onBack }) {
           leads.length > 0 && (
             <div className="leads-list">
 
-              {leads.map((lead, index) => (
-                <div
-                  className="lead-card"
-                  key={lead.id}
-                >
+              {leads.map((lead, index) => {
 
-                  <div className="lead-rank">
-                    #{index + 1}
-                  </div>
+                const score =
+                  Number(lead.score) || 0;
 
-                  <div className="lead-main">
+                const riskLevel =
+                  score >= 80
+                    ? 'HIGH RISK'
+                    : score >= 50
+                      ? 'MEDIUM RISK'
+                      : 'LOW RISK';
 
-                    <div className="lead-top">
+                const riskClass =
+                  score >= 80
+                    ? 'high'
+                    : score >= 50
+                      ? 'medium'
+                      : 'low';
 
-                      <div>
+                const signals =
+                  lead.signals || {};
 
-                        <span className="lead-id">
-                          {lead.id}
-                        </span>
+                return (
+                  <div
+                    className="lead-card"
+                    key={lead.id}
+                  >
 
-                        <h3>
-                          {lead.label}
-                        </h3>
-
-                      </div>
-
-                      <div className="lead-score">
-
-                        <span>
-                          SCORE
-                        </span>
-
-                        <strong>
-                          {lead.score}
-                        </strong>
-
-                      </div>
-
+                    <div className="lead-rank">
+                      #{index + 1}
                     </div>
 
+                    <div className="lead-main">
 
-                    {/* SIGNALS */}
+                      {/* =====================
+                          LEAD HEADER
+                      ====================== */}
 
-                    <div className="signal-grid">
+                      <div className="lead-top">
 
-                      <div>
-                        <span>
-                          Financial
-                        </span>
+                        <div>
 
-                        <strong>
-                          {Math.round(
-                            lead.signals.financial *
-                              100
-                          )}
-                        </strong>
+                          <span className="lead-id">
+                            {lead.id}
+                          </span>
+
+                          <h3>
+                            {lead.label}
+                          </h3>
+
+                          <span
+                            className={`lead-risk-badge risk-${riskClass}`}
+                          >
+                            {riskLevel}
+                          </span>
+
+                        </div>
+
+
+                        {/* SCORE */}
+
+                        <div className="lead-score">
+
+                          <span>
+                            SCORE
+                          </span>
+
+                          <strong>
+                            {score}
+                          </strong>
+
+                          <div className="lead-score-bar">
+
+                            <div
+                              className={`lead-score-fill score-${riskClass}`}
+                              style={{
+                                width: `${Math.min(
+                                  Math.max(
+                                    score,
+                                    0
+                                  ),
+                                  100
+                                )}%`,
+                              }}
+                            />
+
+                          </div>
+
+                        </div>
+
                       </div>
 
-                      <div>
-                        <span>
-                          Communication
-                        </span>
 
-                        <strong>
-                          {Math.round(
-                            lead.signals.communication *
-                              100
-                          )}
-                        </strong>
-                      </div>
+                      {/* =====================
+                          SIGNALS
+                      ====================== */}
 
-                      <div>
-                        <span>
-                          Cross-source
-                        </span>
+                      <div className="signal-grid">
 
-                        <strong>
-                          {Math.round(
-                            lead.signals.crossSource *
-                              100
-                          )}
-                        </strong>
-                      </div>
+                        <div>
+                          <span>
+                            Financial
+                          </span>
 
-                      <div>
-                        <span>
-                          Temporal
-                        </span>
-
-                        <strong>
-                          {Math.round(
-                            lead.signals.temporal *
-                              100
-                          )}
-                        </strong>
-                      </div>
-
-                      <div>
-                        <span>
-                          Centrality
-                        </span>
-
-                        <strong>
-                          {Math.round(
-                            lead.signals.centrality *
-                              100
-                          )}
-                        </strong>
-                      </div>
-
-                    </div>
-
-
-                    {/* REASONS */}
-
-                    {lead.reasons?.length > 0 && (
-                      <div className="lead-reasons">
-
-                        <span>
-                          KEY SIGNALS
-                        </span>
-
-                        <ul>
-                          {lead.reasons
-                            .slice(0, 2)
-                            .map(
-                              (
-                                reason,
-                                reasonIndex
-                              ) => (
-                                <li
-                                  key={
-                                    reasonIndex
-                                  }
-                                >
-                                  {reason}
-                                </li>
-                              )
+                          <strong>
+                            {Math.round(
+                              Number(
+                                signals.financial ||
+                                  0
+                              ) * 100
                             )}
-                        </ul>
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            Communication
+                          </span>
+
+                          <strong>
+                            {Math.round(
+                              Number(
+                                signals.communication ||
+                                  0
+                              ) * 100
+                            )}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            Cross-source
+                          </span>
+
+                          <strong>
+                            {Math.round(
+                              Number(
+                                signals.crossSource ||
+                                  0
+                              ) * 100
+                            )}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            Temporal
+                          </span>
+
+                          <strong>
+                            {Math.round(
+                              Number(
+                                signals.temporal ||
+                                  0
+                              ) * 100
+                            )}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            Centrality
+                          </span>
+
+                          <strong>
+                            {Math.round(
+                              Number(
+                                signals.centrality ||
+                                  0
+                              ) * 100
+                            )}
+                          </strong>
+                        </div>
 
                       </div>
-                    )}
 
 
-                    {/* VIEW WHY */}
+                      {/* =====================
+                          REASONS
+                      ====================== */}
 
-                    <div className="lead-actions">
+                      {lead.reasons?.length > 0 && (
+                        <div className="lead-reasons">
 
-                      <button
-                        type="button"
-                        className="why-button"
-                        onClick={() =>
-                          handleViewWhy(lead)
-                        }
-                      >
-                        View Why →
-                      </button>
+                          <span>
+                            KEY SIGNALS
+                          </span>
+
+                          <ul>
+
+                            {lead.reasons
+                              .slice(0, 2)
+                              .map(
+                                (
+                                  reason,
+                                  reasonIndex
+                                ) => (
+                                  <li
+                                    key={
+                                      reasonIndex
+                                    }
+                                  >
+                                    {reason}
+                                  </li>
+                                )
+                              )}
+
+                          </ul>
+
+                        </div>
+                      )}
+
+
+                      {/* =====================
+                          VIEW WHY
+                      ====================== */}
+
+                      <div className="lead-actions">
+
+                        <button
+                          type="button"
+                          className="why-button"
+                          onClick={() =>
+                            handleViewWhy(lead)
+                          }
+                        >
+                          View Why →
+                        </button>
+
+                      </div>
 
                     </div>
 
                   </div>
-
-                </div>
-              ))}
+                );
+              })}
 
             </div>
           )}

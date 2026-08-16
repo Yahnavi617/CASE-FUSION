@@ -1834,3 +1834,69 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* =========================================================
+   PRIORITY LEAD POLISH
+   ========================================================= */
+
+.lead-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.risk-high {
+  color: #ff9ca8;
+  background: #321b20;
+  border: 1px solid #66343e;
+}
+
+.risk-medium {
+  color: #e7c98b;
+  background: #302a1d;
+  border: 1px solid #5d5131;
+}
+
+.risk-low {
+  color: #8bc9ad;
+  background: #172a22;
+  border: 1px solid #315843;
+}
+
+.lead-score-bar {
+  width: 76px;
+  height: 3px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #202938;
+}
+
+.lead-score-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.score-high {
+  background: #d86675;
+}
+
+.score-medium {
+  background: #c5a75f;
+}
+
+.score-low {
+  background: #62a887;
+}
+
+@media (max-width: 550px) {
+  .lead-score-bar {
+    width: 90px;
+  }
+}

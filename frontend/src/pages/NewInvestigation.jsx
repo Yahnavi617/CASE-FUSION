@@ -108,13 +108,17 @@ function NewInvestigation({ onBack, onCreated }) {
       console.log('Case created successfully:', data);
 
       setCreatedCase(data.case);
-      onCreated(data.case);
+
+      onCreated?.(data.case);
 
       setSuccess(
         `Investigation created successfully: ${data.case.caseId}`
       );
     } catch (err) {
-      console.error('Create investigation error:', err);
+      console.error(
+        'Create investigation error:',
+        err
+      );
 
       setError(
         err.message ||

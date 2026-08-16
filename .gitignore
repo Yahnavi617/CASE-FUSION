@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Environment variables / secrets
+.env
+.env.*
+
+# Runtime/generated case storage
+backend/storage/cases/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

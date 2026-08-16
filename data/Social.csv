@@ -1,0 +1,7 @@
+social_id,handle,activity,timestamp,device_id
+S001,@rahul_a,contacted_B,2026-08-14 10:48,DEV-21A
+S002,@b_handle,contacted_C,2026-08-14 10:50,DEV-77A
+S003,@c_handle07,posted_after_transfer,2026-08-14 10:53,DEV-77A
+S004,@d_handle,contacted_C,2026-08-14 10:56,DEV-33D
+S006,@random_e,regular_post,2026-07-02 15:00,DEV-90E
+S007,@random_e,regular_post,2026-07-12 17:00,DEV-90E

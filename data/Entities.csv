@@ -1,0 +1,6 @@
+entity_id,label,phone,account,handle,known_suspect
+A,Person A,9811100001,ACC1001,@rahul_a,true
+B,Person B,9822200002,ACC1002,@b_handle,false
+C,Person C,9833300003,ACC1003,@c_handle07,false
+D,Person D,9844400004,ACC1004,@d_handle,false
+E,Person E,9855500005,ACC1005,@random_e,false

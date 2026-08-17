@@ -1,16 +1,56 @@
-# React + Vite
+# CASE-FUSION
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+CASE-FUSION is an intelligence investigation platform that helps investigators analyze multiple datasets and identify high-priority entities connected to a case.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Create new investigations
+- Upload CDR, bank, social and entity CSV datasets
+- Analyze investigation data
+- Priority lead scoring
+- Financial, communication, cross-source, temporal and centrality signals
+- Evidence-based lead explanations
+- Entity relationship network visualization
+- Case evidence summary
+- High, medium and low risk classification
+- Investigation history and dashboard
+- Export priority leads as CSV
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Frontend
+- React
+- Vite
+- JavaScript
+- CSS
 
-## Expanding the Oxlint configuration
+### Backend
+- Node.js
+- Express
+- REST API
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### Scoring Engine
+- Node.js
+- Rule-based intelligence scoring
+
+## Project Structure
+
+```text
+CASE-FUSION/
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── services/
+│   └── package.json
+│
+├── backend/
+│   ├── server.js
+│   ├── storage/
+│   └── package.json
+│
+└── scoring-engine/
+    ├── run.js
+    ├── scoringEngine.js
+    └── package.json

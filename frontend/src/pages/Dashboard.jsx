@@ -1,24 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCases } from '../services/api';
 
-function Dashboard({ onNewInvestigation, onOpenCase }) {
+function Dashboard({
+  onNewInvestigation,
+  onOpenCase,
+}) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // =========================
-  // SEARCH + FILTER STATE
+  // SEARCH / FILTER / SORT
   // =========================
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  // =========================
-  // NEW: SORT STATE
-  // =========================
+  const [statusFilter, setStatusFilter] =
+    useState('all');
 
   const [sortOption, setSortOption] =
     useState('newest');
+
+  // =========================
+  // LOAD CASES
+  // =========================
 
   useEffect(() => {
     loadCases();
@@ -31,7 +35,11 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
 
       const data = await getCases();
 
-      setCases(data.cases || []);
+      setCases(
+        Array.isArray(data?.cases)
+          ? data.cases
+          : []
+      );
     } catch (err) {
       console.error(
         'Failed to load investigations:',
@@ -39,7 +47,7 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
       );
 
       setError(
-        err.message ||
+        err?.message ||
           'Failed to load investigations.'
       );
     } finally {
@@ -47,18 +55,51 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
     }
   }
 
-  const analyzedCases = cases.filter(
-    (item) => item.status === 'analyzed'
-  ).length;
+  // =========================
+  // DASHBOARD METRICS
+  // =========================
 
-  const priorityLeads = cases.reduce(
-    (total, item) =>
-      total + (item.leadCount || 0),
-    0
+  const analyzedCases = useMemo(
+    () =>
+      cases.filter(
+        (item) =>
+          item?.status === 'analyzed'
+      ).length,
+    [cases]
   );
 
+  const uploadedCases = useMemo(
+    () =>
+      cases.filter(
+        (item) =>
+          item?.status === 'uploaded'
+      ).length,
+    [cases]
+  );
+
+  const priorityLeads = useMemo(
+    () =>
+      cases.reduce(
+        (total, item) =>
+          total +
+          Number(item?.leadCount || 0),
+        0
+      ),
+    [cases]
+  );
+
+  const analysisRate = useMemo(() => {
+    if (!cases.length) {
+      return 0;
+    }
+
+    return Math.round(
+      (analyzedCases / cases.length) * 100
+    );
+  }, [cases.length, analyzedCases]);
+
   // =========================
-  // SEARCH + FILTER + SORT
+  // FILTER + SEARCH + SORT
   // =========================
 
   const filteredCases = useMemo(() => {
@@ -68,18 +109,22 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
 
     const matchingCases = cases.filter(
       (item) => {
+        const name =
+          String(item?.name || '')
+            .toLowerCase();
+
+        const caseId =
+          String(item?.caseId || '')
+            .toLowerCase();
+
         const matchesSearch =
           !search ||
-          item.name
-            ?.toLowerCase()
-            .includes(search) ||
-          item.caseId
-            ?.toLowerCase()
-            .includes(search);
+          name.includes(search) ||
+          caseId.includes(search);
 
         const matchesStatus =
           statusFilter === 'all' ||
-          item.status === statusFilter;
+          item?.status === statusFilter;
 
         return (
           matchesSearch &&
@@ -88,47 +133,49 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
       }
     );
 
-    // =========================
-    // SORTING
-    // =========================
-
     return [...matchingCases].sort(
       (a, b) => {
         switch (sortOption) {
           case 'oldest': {
-            const dateA = a.createdAt
-              ? new Date(a.createdAt).getTime()
+            const dateA = a?.createdAt
+              ? new Date(
+                  a.createdAt
+                ).getTime()
               : 0;
 
-            const dateB = b.createdAt
-              ? new Date(b.createdAt).getTime()
+            const dateB = b?.createdAt
+              ? new Date(
+                  b.createdAt
+                ).getTime()
               : 0;
 
             return dateA - dateB;
           }
 
-          case 'leads-high': {
+          case 'leads-high':
             return (
-              Number(b.leadCount || 0) -
-              Number(a.leadCount || 0)
+              Number(b?.leadCount || 0) -
+              Number(a?.leadCount || 0)
             );
-          }
 
-          case 'leads-low': {
+          case 'leads-low':
             return (
-              Number(a.leadCount || 0) -
-              Number(b.leadCount || 0)
+              Number(a?.leadCount || 0) -
+              Number(b?.leadCount || 0)
             );
-          }
 
           case 'newest':
           default: {
-            const dateA = a.createdAt
-              ? new Date(a.createdAt).getTime()
+            const dateA = a?.createdAt
+              ? new Date(
+                  a.createdAt
+                ).getTime()
               : 0;
 
-            const dateB = b.createdAt
-              ? new Date(b.createdAt).getTime()
+            const dateB = b?.createdAt
+              ? new Date(
+                  b.createdAt
+                ).getTime()
               : 0;
 
             return dateB - dateA;
@@ -143,9 +190,59 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
     sortOption,
   ]);
 
+  // =========================
+  // HELPERS
+  // =========================
+
+  function clearFilters() {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setSortOption('newest');
+  }
+
+  function formatDate(date) {
+    if (!date) {
+      return '—';
+    }
+
+    const parsedDate = new Date(date);
+
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
+      return '—';
+    }
+
+    return parsedDate.toLocaleDateString(
+      undefined,
+      {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }
+    );
+  }
+
+  function formatStatus(status) {
+    if (!status) {
+      return 'Unknown';
+    }
+
+    return String(status)
+      .charAt(0)
+      .toUpperCase() +
+      String(status).slice(1);
+  }
+
   return (
-    <div className="app">
-      <header className="topbar">
+    <div className="app dashboard-app">
+      {/* =====================================================
+          TOP BAR
+      ====================================================== */}
+
+      <header className="topbar dashboard-topbar">
         <div className="brand">
           <div className="brand-mark">
             C
@@ -161,34 +258,81 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
         </div>
 
         <button
+          type="button"
           className="new-case-btn"
           onClick={onNewInvestigation}
         >
-          + New Investigation
+          <span className="new-case-plus">
+            +
+          </span>
+
+          <span>
+            New Investigation
+          </span>
         </button>
       </header>
 
+      {/* =====================================================
+          MAIN DASHBOARD
+      ====================================================== */}
+
       <main className="dashboard">
-        <section className="hero">
-          <div>
-            <p className="section-label">
-              OVERVIEW
-            </p>
+        {/* ===================================================
+            HERO
+        ==================================================== */}
 
-            <h2>
-              Investigation Dashboard
-            </h2>
+        <section className="dashboard-hero">
+          <div className="dashboard-hero-content">
+            <div>
+              <p className="section-label">
+                COMMAND CENTER
+              </p>
 
-            <p className="hero-text">
-              Analyze cross-source intelligence and
-              surface high-priority leads.
-            </p>
+              <h2>
+                Investigation Dashboard
+              </h2>
+
+              <p className="hero-text">
+                Analyze cross-source intelligence,
+                track investigations, and surface
+                high-priority leads.
+              </p>
+            </div>
+
+            <div className="hero-status">
+              <span className="hero-status-dot" />
+
+              <div>
+                <strong>
+                  Intelligence System
+                </strong>
+
+                <small>
+                  Ready for investigation
+                </small>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="stats-grid">
-          <div className="stat-card">
-            <span>Total Cases</span>
+        {/* ===================================================
+            STATS
+        ==================================================== */}
+
+        <section
+          className="stats-grid dashboard-stats-grid"
+          aria-label="Investigation statistics"
+        >
+          <div className="stat-card dashboard-stat-card">
+            <div className="stat-card-top">
+              <span>
+                TOTAL CASES
+              </span>
+
+              <div className="stat-icon">
+                ◫
+              </div>
+            </div>
 
             <strong>
               {cases.length}
@@ -199,76 +343,261 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
             </small>
           </div>
 
-          <div className="stat-card">
-            <span>Analyzed Cases</span>
+          <div className="stat-card dashboard-stat-card">
+            <div className="stat-card-top">
+              <span>
+                ANALYZED CASES
+              </span>
+
+              <div className="stat-icon stat-icon-success">
+                ✓
+              </div>
+            </div>
 
             <strong>
               {analyzedCases}
             </strong>
 
             <small>
-              Cases completed
+              {analysisRate}% of all cases analyzed
             </small>
           </div>
 
-          <div className="stat-card">
-            <span>Priority Leads</span>
+          <div className="stat-card dashboard-stat-card">
+            <div className="stat-card-top">
+              <span>
+                PRIORITY LEADS
+              </span>
+
+              <div className="stat-icon stat-icon-lead">
+                !
+              </div>
+            </div>
 
             <strong>
               {priorityLeads}
             </strong>
 
             <small>
-              Leads identified
+              Leads identified across cases
             </small>
           </div>
         </section>
 
-        <section className="investigations">
-          <div className="section-heading">
+        {/* ===================================================
+            QUICK STATUS OVERVIEW
+        ==================================================== */}
+
+        <section className="dashboard-overview-strip">
+          <div className="overview-strip-item">
+            <div className="overview-strip-indicator analyzed" />
+
+            <div>
+              <span>
+                ANALYZED
+              </span>
+
+              <strong>
+                {analyzedCases}
+              </strong>
+            </div>
+          </div>
+
+          <div className="overview-strip-item">
+            <div className="overview-strip-indicator uploaded" />
+
+            <div>
+              <span>
+                AWAITING ANALYSIS
+              </span>
+
+              <strong>
+                {uploadedCases}
+              </strong>
+            </div>
+          </div>
+
+          <div className="overview-strip-item">
+            <div className="overview-strip-indicator leads" />
+
+            <div>
+              <span>
+                LEAD DENSITY
+              </span>
+
+              <strong>
+                {cases.length
+                  ? (
+                      priorityLeads /
+                      cases.length
+                    ).toFixed(1)
+                  : '0.0'}
+                <small>
+                  {' '}
+                  leads/case
+                </small>
+              </strong>
+            </div>
+          </div>
+
+          <div className="overview-strip-item">
+            <div className="overview-strip-indicator system" />
+
+            <div>
+              <span>
+                PLATFORM STATUS
+              </span>
+
+              <strong>
+                Operational
+              </strong>
+            </div>
+          </div>
+        </section>
+
+        {/* ===================================================
+            INVESTIGATIONS
+        ==================================================== */}
+
+        <section className="investigations dashboard-investigations">
+          <div className="section-heading dashboard-section-heading">
             <div>
               <p className="section-label">
-                CASES
+                CASE MANAGEMENT
               </p>
 
               <h3>
                 Recent Investigations
               </h3>
+
+              <p className="section-description">
+                Search, filter, and open your
+                investigation workspace.
+              </p>
             </div>
 
             <button
-              className="view-all-btn"
+              type="button"
+              className="view-all-btn dashboard-refresh-btn"
               onClick={loadCases}
               disabled={loading}
             >
+              <span
+                className={
+                  loading
+                    ? 'refresh-icon refresh-spinning'
+                    : 'refresh-icon'
+                }
+              >
+                ↻
+              </span>
+
               {loading
-                ? 'Loading...'
+                ? 'Refreshing'
                 : 'Refresh'}
             </button>
           </div>
 
+          {/* ERROR */}
+
           {error && (
-            <div className="dashboard-error">
-              {error}
+            <div
+              className="dashboard-error"
+              role="alert"
+            >
+              <span className="dashboard-error-icon">
+                !
+              </span>
+
+              <div>
+                <strong>
+                  Unable to load investigations
+                </strong>
+
+                <p>
+                  {error}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={loadCases}
+                disabled={loading}
+              >
+                Retry
+              </button>
             </div>
           )}
 
+          {/* LOADING */}
+
           {loading && (
-            <div className="dashboard-loading">
-              Loading investigations...
+            <div className="dashboard-loading dashboard-loading-enhanced">
+              <div className="loading-spinner" />
+
+              <div>
+                <strong>
+                  Loading investigations
+                </strong>
+
+                <span>
+                  Syncing case intelligence...
+                </span>
+              </div>
             </div>
           )}
+
+          {/* =================================================
+              EMPTY — NO CASES
+          ================================================== */}
+
+          {!loading &&
+            cases.length === 0 && (
+              <div className="empty-state dashboard-empty-state">
+                <div className="empty-icon">
+                  +
+                </div>
+
+                <div className="empty-state-label">
+                  NO ACTIVE INVESTIGATIONS
+                </div>
+
+                <h3>
+                  Start your first investigation
+                </h3>
+
+                <p>
+                  Create an investigation by
+                  uploading the required datasets.
+                  CaseFusion will organize the
+                  intelligence and surface relevant
+                  leads.
+                </p>
+
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={onNewInvestigation}
+                >
+                  <span>+</span>
+                  Create Investigation
+                </button>
+              </div>
+            )}
+
+          {/* =================================================
+              CONTROLS
+          ================================================== */}
 
           {!loading &&
             cases.length > 0 && (
               <>
-                {/* =========================
-                    SEARCH + FILTER
-                ========================== */}
-
-                <div className="case-controls">
+                <div className="case-controls dashboard-case-controls">
                   <div className="case-search">
-                    <span className="case-search-icon">
+                    <span
+                      className="case-search-icon"
+                      aria-hidden="true"
+                    >
                       ⌕
                     </span>
 
@@ -281,6 +610,7 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                         )
                       }
                       placeholder="Search investigations or Case ID..."
+                      aria-label="Search investigations"
                     />
 
                     {searchTerm && (
@@ -297,7 +627,10 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                     )}
                   </div>
 
-                  <div className="case-filters">
+                  <div
+                    className="case-filters"
+                    aria-label="Case status filters"
+                  >
                     <button
                       type="button"
                       className={`case-filter-btn ${
@@ -310,6 +643,9 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                       }
                     >
                       All
+                      <span>
+                        {cases.length}
+                      </span>
                     </button>
 
                     <button
@@ -326,6 +662,9 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                       }
                     >
                       Analyzed
+                      <span>
+                        {analyzedCases}
+                      </span>
                     </button>
 
                     <button
@@ -342,120 +681,119 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                       }
                     >
                       Uploaded
+                      <span>
+                        {uploadedCases}
+                      </span>
                     </button>
                   </div>
                 </div>
 
-                {/* =========================
-                    NEW: SORT CONTROL
-                ========================== */}
+                <div className="case-sort-row dashboard-sort-row">
+                  <div className="case-results-info dashboard-results-info">
+                    <span>
+                      Showing{' '}
+                      <strong>
+                        {filteredCases.length}
+                      </strong>{' '}
+                      of{' '}
+                      <strong>
+                        {cases.length}
+                      </strong>{' '}
+                      investigations
+                    </span>
+                  </div>
 
-                <div className="case-sort-row">
-                  <label
-                    htmlFor="case-sort"
-                    className="case-sort-label"
-                  >
-                    SORT
-                  </label>
+                  <div className="dashboard-sort-wrapper">
+                    <label
+                      htmlFor="case-sort"
+                      className="case-sort-label"
+                    >
+                      SORT BY
+                    </label>
 
-                  <select
-                    id="case-sort"
-                    className="case-sort-select"
-                    value={sortOption}
-                    onChange={(event) =>
-                      setSortOption(
-                        event.target.value
-                      )
-                    }
-                  >
-                    <option value="newest">
-                      Newest first
-                    </option>
+                    <select
+                      id="case-sort"
+                      className="case-sort-select"
+                      value={sortOption}
+                      onChange={(event) =>
+                        setSortOption(
+                          event.target.value
+                        )
+                      }
+                    >
+                      <option value="newest">
+                        Newest first
+                      </option>
 
-                    <option value="oldest">
-                      Oldest first
-                    </option>
+                      <option value="oldest">
+                        Oldest first
+                      </option>
 
-                    <option value="leads-high">
-                      Most leads
-                    </option>
+                      <option value="leads-high">
+                        Most leads
+                      </option>
 
-                    <option value="leads-low">
-                      Least leads
-                    </option>
-                  </select>
+                      <option value="leads-low">
+                        Least leads
+                      </option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* =========================
-                    FILTER RESULT COUNT
-                ========================== */}
+                {(searchTerm ||
+                  statusFilter !== 'all' ||
+                  sortOption !== 'newest') && (
+                  <div className="dashboard-active-filters">
+                    <span>
+                      Filters active
+                    </span>
 
-                <div className="case-results-info">
-                  <span>
-                    Showing{' '}
-                    <strong>
-                      {filteredCases.length}
-                    </strong>{' '}
-                    of{' '}
-                    <strong>
-                      {cases.length}
-                    </strong>{' '}
-                    investigations
-                  </span>
+                    {searchTerm && (
+                      <span className="active-filter-chip">
+                        Search: {searchTerm}
+                      </span>
+                    )}
 
-                  {(searchTerm ||
-                    statusFilter !== 'all' ||
-                    sortOption !== 'newest') && (
+                    {statusFilter !== 'all' && (
+                      <span className="active-filter-chip">
+                        Status:{' '}
+                        {formatStatus(
+                          statusFilter
+                        )}
+                      </span>
+                    )}
+
+                    {sortOption !== 'newest' && (
+                      <span className="active-filter-chip">
+                        Sorted
+                      </span>
+                    )}
+
                     <button
                       type="button"
-                      className="clear-filters-btn"
-                      onClick={() => {
-                        setSearchTerm('');
-                        setStatusFilter('all');
-                        setSortOption('newest');
-                      }}
+                      onClick={clearFilters}
                     >
-                      Clear filters
+                      Clear all
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </>
             )}
 
-          {!loading &&
-            cases.length === 0 && (
-              <div className="empty-state">
-                <div className="empty-icon">
-                  +
-                </div>
-
-                <h3>
-                  No investigations yet
-                </h3>
-
-                <p>
-                  Create your first investigation
-                  by uploading the required
-                  datasets.
-                </p>
-
-                <button
-                  className="primary-btn"
-                  onClick={
-                    onNewInvestigation
-                  }
-                >
-                  Create Investigation
-                </button>
-              </div>
-            )}
+          {/* =================================================
+              FILTERED EMPTY
+          ================================================== */}
 
           {!loading &&
             cases.length > 0 &&
             filteredCases.length === 0 && (
-              <div className="empty-state filtered-empty-state">
+              <div className="empty-state filtered-empty-state dashboard-empty-state">
                 <div className="empty-icon">
                   ⌕
+                </div>
+
+                <div className="empty-state-label">
+                  NO MATCHES
                 </div>
 
                 <h3>
@@ -463,96 +801,141 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                 </h3>
 
                 <p>
-                  Try changing your search or
-                  status filter.
+                  We couldn't find a case matching
+                  your current search or status
+                  filter.
                 </p>
 
                 <button
+                  type="button"
                   className="primary-btn"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setStatusFilter('all');
-                    setSortOption('newest');
-                  }}
+                  onClick={clearFilters}
                 >
                   Clear Filters
                 </button>
               </div>
             )}
 
+          {/* =================================================
+              CASE LIST
+          ================================================== */}
+
           {!loading &&
             filteredCases.length > 0 && (
-              <div className="cases-list">
-                {filteredCases.map((item) => (
-                  <button
-                    className="case-row"
-                    key={item.caseId}
-                    onClick={() =>
-                      onOpenCase(item.caseId)
-                    }
-                  >
-                    <div className="case-row-main">
-                      <div className="case-status-dot" />
+              <div className="cases-list dashboard-cases-list">
+                {filteredCases.map(
+                  (item, index) => {
+                    const status =
+                      item?.status ||
+                      'unknown';
 
-                      <div>
-                        <h4>
-                          {item.name}
-                        </h4>
+                    const leadCount = Number(
+                      item?.leadCount || 0
+                    );
 
-                        <span>
-                          {item.caseId}
-                        </span>
-                      </div>
-                    </div>
+                    return (
+                      <button
+                        type="button"
+                        className="case-row dashboard-case-row"
+                        key={
+                          item?.caseId ||
+                          `${item?.name || 'case'}-${index}`
+                        }
+                        onClick={() =>
+                          item?.caseId &&
+                          onOpenCase(
+                            item.caseId
+                          )
+                        }
+                      >
+                        <div className="case-row-main">
+                          <div
+                            className={`case-status-dot ${
+                              status ===
+                              'analyzed'
+                                ? 'case-dot-analyzed'
+                                : 'case-dot-uploaded'
+                            }`}
+                          />
 
-                    <div className="case-row-meta">
-                      <div>
-                        <span>
-                          STATUS
-                        </span>
+                          <div className="case-primary-info">
+                            <div className="case-title-line">
+                              <h4>
+                                {item?.name ||
+                                  'Untitled Investigation'}
+                              </h4>
 
-                        <strong
-                          className={
-                            item.status ===
-                            'analyzed'
-                              ? 'case-analyzed'
-                              : 'case-uploaded'
-                          }
-                        >
-                          {item.status}
-                        </strong>
-                      </div>
+                              {status ===
+                                'analyzed' && (
+                                <span className="case-ready-badge">
+                                  ANALYZED
+                                </span>
+                              )}
+                            </div>
 
-                      <div>
-                        <span>
-                          LEADS
-                        </span>
+                            <span className="case-id">
+                              {item?.caseId ||
+                                'No Case ID'}
+                            </span>
+                          </div>
+                        </div>
 
-                        <strong>
-                          {item.leadCount || 0}
-                        </strong>
-                      </div>
+                        <div className="case-row-meta">
+                          <div>
+                            <span>
+                              STATUS
+                            </span>
 
-                      <div>
-                        <span>
-                          CREATED
-                        </span>
+                            <strong
+                              className={
+                                status ===
+                                'analyzed'
+                                  ? 'case-analyzed'
+                                  : 'case-uploaded'
+                              }
+                            >
+                              {formatStatus(
+                                status
+                              )}
+                            </strong>
+                          </div>
 
-                        <strong>
-                          {item.createdAt
-                            ? new Date(
-                                item.createdAt
-                              ).toLocaleDateString()
-                            : '—'}
-                        </strong>
-                      </div>
+                          <div>
+                            <span>
+                              LEADS
+                            </span>
 
-                      <div className="case-arrow">
-                        →
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                            <strong
+                              className={
+                                leadCount > 0
+                                  ? 'case-leads-value'
+                                  : ''
+                              }
+                            >
+                              {leadCount}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span>
+                              CREATED
+                            </span>
+
+                            <strong>
+                              {formatDate(
+                                item?.createdAt
+                              )}
+                            </strong>
+                          </div>
+
+                          <div className="case-arrow">
+                            →
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  }
+                )}
               </div>
             )}
         </section>

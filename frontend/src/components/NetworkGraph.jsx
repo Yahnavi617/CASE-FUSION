@@ -21,6 +21,9 @@ function NetworkGraph({ caseId, selectedLead }) {
 
       const data = await getCaseNetwork(caseId);
 
+      console.log("NETWORK NODES:", data.nodes);
+      console.log("NETWORK EDGES:", data.edges);
+
       setNetwork({
         nodes: data.nodes || [],
         edges: data.edges || [],
@@ -87,22 +90,190 @@ function NetworkGraph({ caseId, selectedLead }) {
 
       const entity = entityMap.get(connectedId);
 
-      if (!entity.types.includes(edge.type)) {
+      if (
+        edge.type &&
+        !entity.types.includes(edge.type)
+      ) {
         entity.types.push(edge.type);
       }
     });
 
-    return Array.from(entityMap.values());
-  }, [centerNode, network.nodes, network.edges]);
+    /*
+     * Keep existing connected entities first.
+     * Then include remaining entities from the API
+     * so the complete network is visible.
+     */
+    network.nodes.forEach((node) => {
+      if (node.id === centerNode.id) {
+        return;
+      }
 
-  const positions = [
-    { x: 50, y: 17 },
-    { x: 82, y: 35 },
-    { x: 82, y: 65 },
-    { x: 50, y: 83 },
-    { x: 18, y: 65 },
-    { x: 18, y: 35 },
-  ];
+      if (!entityMap.has(node.id)) {
+        entityMap.set(node.id, {
+          node,
+          types: [],
+        });
+      }
+    });
+
+    return Array.from(entityMap.values());
+  }, [
+    centerNode,
+    network.nodes,
+    network.edges,
+  ]);
+
+  /*
+   * =====================================================
+   * CLEAN NETWORK POSITIONS
+   * =====================================================
+   *
+   * Center:
+   *             50 / 50
+   *
+   * 3 entities:
+   *
+   *             TOP
+   *
+   * LEFT      CENTER      RIGHT
+   *
+   * This keeps the graph clean and prevents overlapping.
+   */
+
+  function getPositions(count) {
+    if (count === 0) {
+      return [];
+    }
+
+    if (count === 1) {
+      return [
+        {
+          x: 50,
+          y: 50,
+        },
+      ];
+    }
+
+    if (count === 2) {
+      return [
+        {
+          x: 20,
+          y: 50,
+        },
+        {
+          x: 80,
+          y: 50,
+        },
+      ];
+    }
+
+    /*
+     * NEW VISUAL POSITIONING
+     *
+     * For the current 3-entity case:
+     *
+     * LEFT ENTITY
+     *      \
+     *       CENTER
+     *      /
+     * RIGHT ENTITY
+     *
+     * This matches the clean reference layout.
+     */
+    if (count === 3) {
+      return [
+        {
+          x: 20,
+          y: 50,
+        },
+        {
+          x: 80,
+          y: 50,
+        },
+        {
+          x: 50,
+          y: 82,
+        },
+      ];
+    }
+
+    if (count === 4) {
+      return [
+        {
+          x: 18,
+          y: 35,
+        },
+        {
+          x: 82,
+          y: 35,
+        },
+        {
+          x: 82,
+          y: 68,
+        },
+        {
+          x: 18,
+          y: 68,
+        },
+      ];
+    }
+
+    if (count === 5) {
+      return [
+        {
+          x: 18,
+          y: 30,
+        },
+        {
+          x: 82,
+          y: 30,
+        },
+        {
+          x: 84,
+          y: 70,
+        },
+        {
+          x: 50,
+          y: 86,
+        },
+        {
+          x: 16,
+          y: 70,
+        },
+      ];
+    }
+
+    return [
+      {
+        x: 50,
+        y: 14,
+      },
+      {
+        x: 84,
+        y: 30,
+      },
+      {
+        x: 84,
+        y: 70,
+      },
+      {
+        x: 50,
+        y: 88,
+      },
+      {
+        x: 16,
+        y: 70,
+      },
+      {
+        x: 16,
+        y: 30,
+      },
+    ];
+  }
+
+  const positions = getPositions(
+    connectedEntities.length
+  );
 
   function getConnectionClass(type) {
     if (type === 'financial') {
@@ -136,13 +307,30 @@ function NetworkGraph({ caseId, selectedLead }) {
     return type;
   }
 
+  /*
+   * Get midpoint of a connection.
+   * Used for the small relationship marker.
+   */
+
+  function getMidpoint(position) {
+    return {
+      x: (50 + position.x) / 2,
+      y: (50 + position.y) / 2,
+    };
+  }
+
   if (loading) {
     return (
       <div className="network-graph">
         <div className="network-title">
           <div>
-            <p className="section-label">NETWORK</p>
-            <h3>Entity Network</h3>
+            <p className="section-label">
+              NETWORK
+            </p>
+
+            <h3>
+              Entity Network
+            </h3>
           </div>
         </div>
 
@@ -158,8 +346,13 @@ function NetworkGraph({ caseId, selectedLead }) {
       <div className="network-graph">
         <div className="network-title">
           <div>
-            <p className="section-label">NETWORK</p>
-            <h3>Entity Network</h3>
+            <p className="section-label">
+              NETWORK
+            </p>
+
+            <h3>
+              Entity Network
+            </h3>
           </div>
         </div>
 
@@ -172,13 +365,20 @@ function NetworkGraph({ caseId, selectedLead }) {
 
   return (
     <div className="network-graph">
+
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
       <div className="network-title">
         <div>
           <p className="section-label">
             NETWORK INTELLIGENCE
           </p>
 
-          <h3>Entity Relationship Network</h3>
+          <h3>
+            Entity Relationship Network
+          </h3>
 
           <p className="network-subtitle">
             Financial, communication and shared-device
@@ -188,8 +388,9 @@ function NetworkGraph({ caseId, selectedLead }) {
 
         <div className="network-counts">
           <span>
-            {connectedEntities.length + (centerNode ? 1 : 0)}
-            {' '}entities
+            {connectedEntities.length +
+              (centerNode ? 1 : 0)}{' '}
+            entities
           </span>
 
           <span>
@@ -198,40 +399,101 @@ function NetworkGraph({ caseId, selectedLead }) {
         </div>
       </div>
 
+      {/* =================================================
+          GRAPH
+      ================================================= */}
+
       <div className="real-network">
+
         {centerNode ? (
           <>
+
+            {/* =================================================
+                CONNECTION LINES + RELATIONSHIP MARKERS
+            ================================================= */}
+
             <svg
               className="network-svg"
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
+              aria-hidden="true"
             >
+
               {connectedEntities.map(
                 ({ node, types }, index) => {
                   const position =
-                    positions[index % positions.length];
+                    positions[index];
+
+                  if (!position) {
+                    return null;
+                  }
 
                   const primaryType =
                     types[0] || 'default';
 
+                  const connectionClass =
+                    getConnectionClass(
+                      primaryType
+                    );
+
+                  const midpoint =
+                    getMidpoint(position);
+
                   return (
-                    <line
-                      key={`${node.id}-line`}
-                      x1="50"
-                      y1="50"
-                      x2={position.x}
-                      y2={position.y}
-                      className={`network-edge-svg edge-${getConnectionClass(
-                        primaryType
-                      )}`}
-                    />
+                    <g
+                      key={`${node.id}-connection`}
+                    >
+
+                      {/* MAIN CONNECTION */}
+
+                      <line
+                        x1="50"
+                        y1="50"
+                        x2={position.x}
+                        y2={position.y}
+                        className={`network-edge-svg edge-${connectionClass}`}
+                      />
+
+                      {/* SMALL CONNECTION MARKER */}
+
+                      <circle
+                        cx={midpoint.x}
+                        cy={midpoint.y}
+                        r="2.1"
+                        className={`network-edge-marker marker-${connectionClass}`}
+                      />
+
+                      {/* INNER MARKER */}
+
+                      <circle
+                        cx={midpoint.x}
+                        cy={midpoint.y}
+                        r="0.7"
+                        className="network-edge-marker-inner"
+                      />
+
+                    </g>
                   );
                 }
               )}
+
             </svg>
 
-            <div className="graph-center">
+            {/* =================================================
+                CENTER / PRIMARY ENTITY
+            ================================================= */}
+
+            <div
+              className="graph-center"
+              style={{
+                left: '50%',
+                top: '50%',
+                transform:
+                  'translate(-50%, -50%)',
+              }}
+            >
               <div className="graph-node-main">
+
                 <div className="graph-node-kicker">
                   PRIMARY ENTITY
                 </div>
@@ -243,13 +505,22 @@ function NetworkGraph({ caseId, selectedLead }) {
                 <span>
                   {centerNode.id}
                 </span>
+
               </div>
             </div>
+
+            {/* =================================================
+                CONNECTED ENTITIES
+            ================================================= */}
 
             {connectedEntities.map(
               ({ node, types }, index) => {
                 const position =
-                  positions[index % positions.length];
+                  positions[index];
+
+                if (!position) {
+                  return null;
+                }
 
                 return (
                   <div
@@ -258,9 +529,13 @@ function NetworkGraph({ caseId, selectedLead }) {
                     style={{
                       left: `${position.x}%`,
                       top: `${position.y}%`,
+                      transform:
+                        'translate(-50%, -50%)',
                     }}
                   >
+
                     <div className="graph-node">
+
                       <div className="graph-node-type">
                         ENTITY
                       </div>
@@ -274,6 +549,7 @@ function NetworkGraph({ caseId, selectedLead }) {
                       </span>
 
                       <div className="relationship-tags">
+
                         {types.map((type) => (
                           <span
                             key={type}
@@ -281,24 +557,36 @@ function NetworkGraph({ caseId, selectedLead }) {
                               type
                             )}`}
                           >
-                            {getRelationshipLabel(type)}
+                            {getRelationshipLabel(
+                              type
+                            )}
                           </span>
                         ))}
+
                       </div>
+
                     </div>
+
                   </div>
                 );
               }
             )}
+
           </>
         ) : (
           <div className="network-state">
             No entities available.
           </div>
         )}
+
       </div>
 
+      {/* =================================================
+          LEGEND
+      ================================================= */}
+
       <div className="network-legend">
+
         <div>
           <span className="legend-dot financial" />
           Financial
@@ -313,7 +601,12 @@ function NetworkGraph({ caseId, selectedLead }) {
           <span className="legend-dot device" />
           Shared Device
         </div>
+
+        <span className="network-hint">
+        </span>
+
       </div>
+
     </div>
   );
 }

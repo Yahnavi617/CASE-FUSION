@@ -44,6 +44,29 @@ function NewInvestigation({ onBack, onCreated }) {
     }));
   }
 
+  // NEW: remove selected file
+  function handleRemoveFile(type) {
+    setFiles((previous) => ({
+      ...previous,
+      [type]: null,
+    }));
+
+    const refs = {
+      cdr: cdrRef,
+      bank: bankRef,
+      social: socialRef,
+      entities: entitiesRef,
+    };
+
+    if (refs[type]?.current) {
+      refs[type].current.value = '';
+    }
+
+    setError('');
+    setSuccess('');
+    setCreatedCase(null);
+  }
+
   const fileItems = [
     {
       key: 'cdr',
@@ -76,6 +99,10 @@ function NewInvestigation({ onBack, onCreated }) {
     files.bank &&
     files.social &&
     files.entities;
+
+  const selectedFileCount = Object.values(files).filter(
+    Boolean
+  ).length;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -255,21 +282,48 @@ function NewInvestigation({ onBack, onCreated }) {
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    className="choose-file-btn"
-                    disabled={loading}
-                    onClick={() =>
-                      item.ref.current?.click()
-                    }
-                  >
-                    {selectedFile
-                      ? 'Change'
-                      : 'Choose CSV'}
-                  </button>
+                  <div className="upload-actions">
+                    <button
+                      type="button"
+                      className="choose-file-btn"
+                      disabled={loading}
+                      onClick={() =>
+                        item.ref.current?.click()
+                      }
+                    >
+                      {selectedFile
+                        ? 'Change'
+                        : 'Choose CSV'}
+                    </button>
+
+                    {selectedFile && (
+                      <button
+                        type="button"
+                        className="remove-file-btn"
+                        disabled={loading}
+                        onClick={() =>
+                          handleRemoveFile(item.key)
+                        }
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
+          </div>
+
+          <div className="upload-progress-info">
+            <span>
+              {selectedFileCount} of 4 files selected
+            </span>
+
+            {allFilesSelected && (
+              <span className="upload-ready">
+                ✓ All files ready
+              </span>
+            )}
           </div>
         </section>
 

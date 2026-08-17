@@ -6,9 +6,19 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // NEW: search and filter state
+  // =========================
+  // SEARCH + FILTER STATE
+  // =========================
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // =========================
+  // NEW: SORT STATE
+  // =========================
+
+  const [sortOption, setSortOption] =
+    useState('newest');
 
   useEffect(() => {
     loadCases();
@@ -47,42 +57,99 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
     0
   );
 
-  // NEW: filtered cases
+  // =========================
+  // SEARCH + FILTER + SORT
+  // =========================
+
   const filteredCases = useMemo(() => {
     const search = searchTerm
       .trim()
       .toLowerCase();
 
-    return cases.filter((item) => {
-      const matchesSearch =
-        !search ||
-        item.name
-          ?.toLowerCase()
-          .includes(search) ||
-        item.caseId
-          ?.toLowerCase()
-          .includes(search);
+    const matchingCases = cases.filter(
+      (item) => {
+        const matchesSearch =
+          !search ||
+          item.name
+            ?.toLowerCase()
+            .includes(search) ||
+          item.caseId
+            ?.toLowerCase()
+            .includes(search);
 
-      const matchesStatus =
-        statusFilter === 'all' ||
-        item.status === statusFilter;
+        const matchesStatus =
+          statusFilter === 'all' ||
+          item.status === statusFilter;
 
-      return (
-        matchesSearch &&
-        matchesStatus
-      );
-    });
+        return (
+          matchesSearch &&
+          matchesStatus
+        );
+      }
+    );
+
+    // =========================
+    // SORTING
+    // =========================
+
+    return [...matchingCases].sort(
+      (a, b) => {
+        switch (sortOption) {
+          case 'oldest': {
+            const dateA = a.createdAt
+              ? new Date(a.createdAt).getTime()
+              : 0;
+
+            const dateB = b.createdAt
+              ? new Date(b.createdAt).getTime()
+              : 0;
+
+            return dateA - dateB;
+          }
+
+          case 'leads-high': {
+            return (
+              Number(b.leadCount || 0) -
+              Number(a.leadCount || 0)
+            );
+          }
+
+          case 'leads-low': {
+            return (
+              Number(a.leadCount || 0) -
+              Number(b.leadCount || 0)
+            );
+          }
+
+          case 'newest':
+          default: {
+            const dateA = a.createdAt
+              ? new Date(a.createdAt).getTime()
+              : 0;
+
+            const dateB = b.createdAt
+              ? new Date(b.createdAt).getTime()
+              : 0;
+
+            return dateB - dateA;
+          }
+        }
+      }
+    );
   }, [
     cases,
     searchTerm,
     statusFilter,
+    sortOption,
   ]);
 
   return (
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <div className="brand-mark">C</div>
+          <div className="brand-mark">
+            C
+          </div>
 
           <div>
             <h1>CASEFUSION</h1>
@@ -280,6 +347,46 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                 </div>
 
                 {/* =========================
+                    NEW: SORT CONTROL
+                ========================== */}
+
+                <div className="case-sort-row">
+                  <label
+                    htmlFor="case-sort"
+                    className="case-sort-label"
+                  >
+                    SORT
+                  </label>
+
+                  <select
+                    id="case-sort"
+                    className="case-sort-select"
+                    value={sortOption}
+                    onChange={(event) =>
+                      setSortOption(
+                        event.target.value
+                      )
+                    }
+                  >
+                    <option value="newest">
+                      Newest first
+                    </option>
+
+                    <option value="oldest">
+                      Oldest first
+                    </option>
+
+                    <option value="leads-high">
+                      Most leads
+                    </option>
+
+                    <option value="leads-low">
+                      Least leads
+                    </option>
+                  </select>
+                </div>
+
+                {/* =========================
                     FILTER RESULT COUNT
                 ========================== */}
 
@@ -297,13 +404,15 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                   </span>
 
                   {(searchTerm ||
-                    statusFilter !== 'all') && (
+                    statusFilter !== 'all' ||
+                    sortOption !== 'newest') && (
                     <button
                       type="button"
                       className="clear-filters-btn"
                       onClick={() => {
                         setSearchTerm('');
                         setStatusFilter('all');
+                        setSortOption('newest');
                       }}
                     >
                       Clear filters
@@ -363,6 +472,7 @@ function Dashboard({ onNewInvestigation, onOpenCase }) {
                   onClick={() => {
                     setSearchTerm('');
                     setStatusFilter('all');
+                    setSortOption('newest');
                   }}
                 >
                   Clear Filters

@@ -17,10 +17,13 @@ function CaseWorkspace({ caseId, onBack }) {
 
   const [selectedLead, setSelectedLead] = useState(null);
 
+  // NEW: lead currently displayed in network
+  const [networkLead, setNetworkLead] = useState(null);
+
   const [error, setError] = useState('');
 
   /* =====================================================
-     NEW: LEAD FILTER + SORT
+     LEAD FILTER + SORT
      ===================================================== */
 
   const [riskFilter, setRiskFilter] = useState('all');
@@ -42,9 +45,14 @@ function CaseWorkspace({ caseId, onBack }) {
       if (caseResponse.case.status === 'analyzed') {
         const leadsResponse = await getLeads(caseId);
 
-        setLeads(leadsResponse.leads || []);
+        const loadedLeads =
+          leadsResponse.leads || [];
+
+        setLeads(loadedLeads);
+        setNetworkLead(loadedLeads[0] || null);
       } else {
         setLeads([]);
+        setNetworkLead(null);
       }
     } catch (err) {
       console.error(
@@ -68,7 +76,13 @@ function CaseWorkspace({ caseId, onBack }) {
 
       const response = await analyzeCase(caseId);
 
-      setLeads(response.leads || []);
+      const analyzedLeads =
+        response.leads || [];
+
+      setLeads(analyzedLeads);
+      setNetworkLead(
+        analyzedLeads[0] || null
+      );
 
       setCaseInfo((previous) => ({
         ...previous,
@@ -97,6 +111,11 @@ function CaseWorkspace({ caseId, onBack }) {
 
   function closeLeadWhy() {
     setSelectedLead(null);
+  }
+
+  // NEW: select lead for network
+  function handleNetworkSelect(lead) {
+    setNetworkLead(lead);
   }
 
   /* =====================================================
@@ -223,7 +242,7 @@ function CaseWorkspace({ caseId, onBack }) {
   }
 
   /* =====================================================
-     NEW: FILTERED + SORTED LEADS
+     FILTERED + SORTED LEADS
      ===================================================== */
 
   const displayedLeads = useMemo(() => {
@@ -380,7 +399,6 @@ function CaseWorkspace({ caseId, onBack }) {
 
       </header>
 
-
       {/* =================================================
           ERROR MESSAGE
           ================================================= */}
@@ -391,7 +409,6 @@ function CaseWorkspace({ caseId, onBack }) {
         </div>
       )}
 
-
       {/* =================================================
           CASE STATS
           ================================================= */}
@@ -399,36 +416,23 @@ function CaseWorkspace({ caseId, onBack }) {
       <section className="workspace-stats">
 
         <div className="workspace-stat">
-
-          <span>
-            CASE STATUS
-          </span>
+          <span>CASE STATUS</span>
 
           <strong>
             {caseInfo?.status}
           </strong>
-
         </div>
 
-
         <div className="workspace-stat">
-
-          <span>
-            PRIORITY LEADS
-          </span>
+          <span>PRIORITY LEADS</span>
 
           <strong>
             {leads.length}
           </strong>
-
         </div>
 
-
         <div className="workspace-stat">
-
-          <span>
-            CREATED
-          </span>
+          <span>CREATED</span>
 
           <strong>
             {caseInfo?.createdAt
@@ -437,15 +441,10 @@ function CaseWorkspace({ caseId, onBack }) {
                 ).toLocaleDateString()
               : '—'}
           </strong>
-
         </div>
 
-
         <div className="workspace-stat">
-
-          <span>
-            ANALYZED
-          </span>
+          <span>ANALYZED</span>
 
           <strong>
             {caseInfo?.analyzedAt
@@ -454,11 +453,211 @@ function CaseWorkspace({ caseId, onBack }) {
                 ).toLocaleDateString()
               : '—'}
           </strong>
-
         </div>
 
       </section>
 
+      {/* =================================================
+          CASE EVIDENCE SUMMARY
+          ================================================= */}
+
+      {isAnalyzed &&
+        leads.length > 0 && (
+          <section className="evidence-summary-section">
+
+            <div className="evidence-summary-heading">
+
+              <div>
+                <p className="section-label">
+                  CASE INTELLIGENCE
+                </p>
+
+                <h2>
+                  Evidence Summary
+                </h2>
+
+                <p>
+                  High-level signals derived from the
+                  analyzed priority leads.
+                </p>
+              </div>
+
+            </div>
+
+            <div className="evidence-summary-grid">
+
+              <div className="evidence-summary-card">
+                <span>TOTAL LEADS</span>
+
+                <strong>
+                  {leads.length}
+                </strong>
+
+                <small>
+                  Entities identified
+                </small>
+              </div>
+
+              <div className="evidence-summary-card">
+                <span>HIGH RISK</span>
+
+                <strong>
+                  {
+                    leads.filter(
+                      (lead) =>
+                        Number(lead.score) >= 80
+                    ).length
+                  }
+                </strong>
+
+                <small>
+                  Score 80 or above
+                </small>
+              </div>
+
+              <div className="evidence-summary-card">
+                <span>MEDIUM RISK</span>
+
+                <strong>
+                  {
+                    leads.filter((lead) => {
+                      const score =
+                        Number(lead.score) || 0;
+
+                      return (
+                        score >= 50 &&
+                        score < 80
+                      );
+                    }).length
+                  }
+                </strong>
+
+                <small>
+                  Score 50–79
+                </small>
+              </div>
+
+              <div className="evidence-summary-card">
+                <span>AVERAGE SCORE</span>
+
+                <strong>
+                  {Math.round(
+                    leads.reduce(
+                      (total, lead) =>
+                        total +
+                        (Number(lead.score) || 0),
+                      0
+                    ) / leads.length
+                  )}
+                </strong>
+
+                <small>
+                  Across all leads
+                </small>
+              </div>
+
+            </div>
+
+            <div className="evidence-signal-summary">
+
+              <div>
+                <span>STRONGEST SIGNAL</span>
+
+                <strong>
+                  {(() => {
+                    const signalTotals = {
+                      Financial: leads.reduce(
+                        (total, lead) =>
+                          total +
+                          Number(
+                            lead.signals?.financial ||
+                              0
+                          ),
+                        0
+                      ),
+
+                      Communication: leads.reduce(
+                        (total, lead) =>
+                          total +
+                          Number(
+                            lead.signals?.communication ||
+                              0
+                          ),
+                        0
+                      ),
+
+                      'Cross-source': leads.reduce(
+                        (total, lead) =>
+                          total +
+                          Number(
+                            lead.signals?.crossSource ||
+                              0
+                          ),
+                        0
+                      ),
+
+                      Temporal: leads.reduce(
+                        (total, lead) =>
+                          total +
+                          Number(
+                            lead.signals?.temporal ||
+                              0
+                          ),
+                        0
+                      ),
+
+                      Centrality: leads.reduce(
+                        (total, lead) =>
+                          total +
+                          Number(
+                            lead.signals?.centrality ||
+                              0
+                          ),
+                        0
+                      ),
+                    };
+
+                    return Object.entries(
+                      signalTotals
+                    ).sort(
+                      (a, b) =>
+                        b[1] - a[1]
+                    )[0]?.[0] || '—';
+                  })()}
+                </strong>
+              </div>
+
+              <div>
+                <span>TOP LEAD</span>
+
+                <strong>
+                  {[
+                    ...leads,
+                  ].sort(
+                    (a, b) =>
+                      (Number(b.score) || 0) -
+                      (Number(a.score) || 0)
+                  )[0]?.label || '—'}
+                </strong>
+              </div>
+
+              <div>
+                <span>TOP SCORE</span>
+
+                <strong>
+                  {Math.max(
+                    ...leads.map(
+                      (lead) =>
+                        Number(lead.score) || 0
+                    )
+                  )}
+                </strong>
+              </div>
+
+            </div>
+
+          </section>
+        )}
 
       {/* =================================================
           NETWORK GRAPH
@@ -468,14 +667,25 @@ function CaseWorkspace({ caseId, onBack }) {
         leads.length > 0 && (
           <section className="main-network-section">
 
+            <div className="network-selected-lead">
+              <span>
+                NETWORK FOCUS
+              </span>
+
+              <strong>
+                {networkLead?.label ||
+                  leads[0]?.label ||
+                  'Primary Entity'}
+              </strong>
+            </div>
+
             <NetworkGraph
               caseId={caseId}
-              selectedLead={leads[0]}
+              selectedLead={networkLead}
             />
 
           </section>
         )}
-
 
       {/* =================================================
           PRIORITY LEADS
@@ -502,11 +712,6 @@ function CaseWorkspace({ caseId, onBack }) {
 
           </div>
 
-
-          {/* =================================================
-              LEADS HEADER ACTIONS
-              ================================================= */}
-
           {isAnalyzed &&
             leads.length > 0 && (
               <div className="leads-heading-actions">
@@ -529,7 +734,6 @@ function CaseWorkspace({ caseId, onBack }) {
             )}
 
         </div>
-
 
         {/* =================================================
             NOT ANALYZED
@@ -566,7 +770,6 @@ function CaseWorkspace({ caseId, onBack }) {
           </div>
         )}
 
-
         {/* =================================================
             NO LEADS
             ================================================= */}
@@ -591,7 +794,6 @@ function CaseWorkspace({ caseId, onBack }) {
             </div>
           )}
 
-
         {/* =================================================
             LEAD LIST
             ================================================= */}
@@ -599,10 +801,6 @@ function CaseWorkspace({ caseId, onBack }) {
         {isAnalyzed &&
           leads.length > 0 && (
             <>
-
-              {/* =================================================
-                  NEW: LEAD FILTERS + SORT
-                  ================================================= */}
 
               <div className="lead-controls">
 
@@ -670,7 +868,6 @@ function CaseWorkspace({ caseId, onBack }) {
 
                 </div>
 
-
                 <label className="lead-sort-control">
 
                   <span className="lead-control-label">
@@ -698,11 +895,6 @@ function CaseWorkspace({ caseId, onBack }) {
 
               </div>
 
-
-              {/* =================================================
-                  FILTER RESULT COUNT
-                  ================================================= */}
-
               <div className="lead-results-info">
 
                 Showing{' '}
@@ -720,11 +912,6 @@ function CaseWorkspace({ caseId, onBack }) {
                 leads
 
               </div>
-
-
-              {/* =================================================
-                  NO FILTER RESULTS
-                  ================================================= */}
 
               {displayedLeads.length === 0 && (
                 <div className="analysis-empty">
@@ -755,11 +942,6 @@ function CaseWorkspace({ caseId, onBack }) {
                 </div>
               )}
 
-
-              {/* =================================================
-                  FILTERED LEAD LIST
-                  ================================================= */}
-
               {displayedLeads.length > 0 && (
                 <div className="leads-list">
 
@@ -786,22 +968,44 @@ function CaseWorkspace({ caseId, onBack }) {
                       const signals =
                         lead.signals || {};
 
+                      const isNetworkSelected =
+                        networkLead?.id === lead.id;
+
                       return (
                         <div
-                          className="lead-card"
+                          className={`lead-card ${
+                            isNetworkSelected
+                              ? 'lead-card-selected'
+                              : ''
+                          }`}
                           key={lead.id}
+                          onClick={() =>
+                            handleNetworkSelect(
+                              lead
+                            )
+                          }
+                          onKeyDown={(event) => {
+                            if (
+                              event.key ===
+                                'Enter' ||
+                              event.key === ' '
+                            ) {
+                              event.preventDefault();
+
+                              handleNetworkSelect(
+                                lead
+                              );
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
                         >
 
                           <div className="lead-rank">
                             #{index + 1}
                           </div>
 
-
                           <div className="lead-main">
-
-                            {/* =================================
-                                LEAD HEADER
-                                ================================= */}
 
                             <div className="lead-top">
 
@@ -821,10 +1025,13 @@ function CaseWorkspace({ caseId, onBack }) {
                                   {riskLevel}
                                 </span>
 
+                                {isNetworkSelected && (
+                                  <span className="network-focus-badge">
+                                    NETWORK FOCUS
+                                  </span>
+                                )}
+
                               </div>
-
-
-                              {/* SCORE */}
 
                               <div className="lead-score">
 
@@ -858,15 +1065,9 @@ function CaseWorkspace({ caseId, onBack }) {
 
                             </div>
 
-
-                            {/* =================================
-                                SIGNALS
-                                ================================= */}
-
                             <div className="signal-grid">
 
                               <div>
-
                                 <span>
                                   Financial
                                 </span>
@@ -879,12 +1080,9 @@ function CaseWorkspace({ caseId, onBack }) {
                                     ) * 100
                                   )}
                                 </strong>
-
                               </div>
 
-
                               <div>
-
                                 <span>
                                   Communication
                                 </span>
@@ -897,12 +1095,9 @@ function CaseWorkspace({ caseId, onBack }) {
                                     ) * 100
                                   )}
                                 </strong>
-
                               </div>
 
-
                               <div>
-
                                 <span>
                                   Cross-source
                                 </span>
@@ -915,12 +1110,9 @@ function CaseWorkspace({ caseId, onBack }) {
                                     ) * 100
                                   )}
                                 </strong>
-
                               </div>
 
-
                               <div>
-
                                 <span>
                                   Temporal
                                 </span>
@@ -933,12 +1125,9 @@ function CaseWorkspace({ caseId, onBack }) {
                                     ) * 100
                                   )}
                                 </strong>
-
                               </div>
 
-
                               <div>
-
                                 <span>
                                   Centrality
                                 </span>
@@ -951,15 +1140,9 @@ function CaseWorkspace({ caseId, onBack }) {
                                     ) * 100
                                   )}
                                 </strong>
-
                               </div>
 
                             </div>
-
-
-                            {/* =================================
-                                REASONS
-                                ================================= */}
 
                             {lead.reasons?.length >
                               0 && (
@@ -993,21 +1176,18 @@ function CaseWorkspace({ caseId, onBack }) {
                               </div>
                             )}
 
-
-                            {/* =================================
-                                VIEW WHY
-                                ================================= */}
-
                             <div className="lead-actions">
 
                               <button
                                 type="button"
                                 className="why-button"
-                                onClick={() =>
+                                onClick={(event) => {
+                                  event.stopPropagation();
+
                                   handleViewWhy(
                                     lead
-                                  )
-                                }
+                                  );
+                                }}
                               >
                                 View Why →
                               </button>
@@ -1028,7 +1208,6 @@ function CaseWorkspace({ caseId, onBack }) {
           )}
 
       </section>
-
 
       {/* =================================================
           LEAD EXPLANATION

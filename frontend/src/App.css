@@ -6683,3 +6683,419 @@
     padding: 25px 17px;
   }
 }
+/* =========================================================
+   CASE WORKSPACE - INVESTIGATION SUMMARY
+   ========================================================= */
+
+.case-summary-section {
+  width: 100%;
+  margin: 28px 0 34px;
+}
+
+.case-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.case-summary-card {
+  position: relative;
+  min-height: 94px;
+  padding: 18px 18px 16px;
+  border: 1px solid #20283a;
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(99, 85, 255, 0.08),
+      transparent 45%
+    ),
+    #0c121d;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.case-summary-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(123, 107, 255, 0.45);
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(99, 85, 255, 0.12),
+      transparent 45%
+    ),
+    #0e1522;
+}
+
+.case-summary-label {
+  display: block;
+  margin-bottom: 9px;
+  color: #73809b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.case-summary-value {
+  display: block;
+  color: #f5f7ff;
+  font-size: 23px;
+  line-height: 1.15;
+  font-weight: 750;
+}
+
+.case-summary-description {
+  display: block;
+  margin-top: 6px;
+  color: #65728d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.case-summary-card.high-risk .case-summary-value {
+  color: #ff6b81;
+}
+
+.case-summary-card.medium-risk .case-summary-value {
+  color: #f0bd5b;
+}
+
+.case-summary-card.average-score .case-summary-value {
+  color: #8c7cff;
+}
+
+.case-summary-card.signal .case-summary-value {
+  color: #63a4ff;
+}
+
+.case-summary-card.top-lead .case-summary-value {
+  color: #b39cff;
+}
+
+
+/* =========================================================
+   CASE INTELLIGENCE HEADER
+   ========================================================= */
+
+.case-intelligence-section {
+  width: 100%;
+}
+
+.case-intelligence-heading {
+  margin-bottom: 20px;
+}
+
+.case-intelligence-eyebrow {
+  margin-bottom: 8px;
+  color: #8172ff;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.case-intelligence-title {
+  margin: 0;
+  color: #f4f6ff;
+  font-size: 25px;
+  line-height: 1.2;
+  font-weight: 750;
+}
+
+.case-intelligence-description {
+  margin: 8px 0 0;
+  color: #70809d;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .case-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .case-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 500px) {
+  .case-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .case-summary-card {
+    min-height: auto;
+  }
+}
+
+/* =========================================================
+   CASE WORKSPACE - INTELLIGENCE SNAPSHOT
+   ADDITIVE STYLES ONLY
+   Does not modify existing components
+   ========================================================= */
+
+.workspace-intelligence-strip {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin: 28px 0 32px;
+}
+
+.workspace-intelligence-item {
+  position: relative;
+  min-height: 104px;
+  padding: 18px 18px 16px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  border: 1px solid #20293b;
+  border-radius: 14px;
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(111, 92, 255, 0.10),
+      transparent 48%
+    ),
+    #0c121d;
+
+  overflow: hidden;
+
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.workspace-intelligence-item::after {
+  content: "";
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  right: -28px;
+  bottom: -32px;
+  border-radius: 50%;
+  background: rgba(112, 91, 255, 0.08);
+  pointer-events: none;
+}
+
+.workspace-intelligence-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(120, 104, 255, 0.45);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.20);
+}
+
+.workspace-intelligence-item > span {
+  display: block;
+  margin-bottom: 9px;
+
+  color: #71809b;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.workspace-intelligence-item > strong {
+  display: block;
+
+  color: #f4f6ff;
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 750;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-intelligence-item > small {
+  display: block;
+  margin-top: 6px;
+
+  color: #65738e;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+/* High risk */
+.workspace-intelligence-item .intelligence-high {
+  color: #ff647b;
+}
+
+/* Medium risk */
+.workspace-intelligence-item .intelligence-medium {
+  color: #f1bd58;
+}
+
+/* Strongest signal */
+.workspace-intelligence-item:nth-child(4) > strong {
+  color: #8d7cff;
+}
+
+/* Top lead */
+.workspace-intelligence-item:nth-child(5) > strong {
+  color: #a997ff;
+}
+
+
+/* =========================================================
+   RESPONSIVE - ONLY THIS NEW STRIP
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .workspace-intelligence-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace-intelligence-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 500px) {
+  .workspace-intelligence-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-intelligence-item {
+    min-height: 90px;
+  }
+}
+/* Network Focus heading */
+.network-focus-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.network-focus-label {
+  color: #f0f4ff;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.network-focus-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+@media (max-width: 650px) {
+  .network-focus-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+/* =========================================
+   NETWORK FOCUS - FINAL OVERRIDE
+   ========================================= */
+
+.network-focus-bar {
+  display: block !important;
+  margin-bottom: 14px !important;
+}
+
+.network-focus-heading {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1.2 !important;
+}
+
+.network-focus-label {
+  display: inline-block !important;
+  color: #dce5f7 !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.2px !important;
+}
+
+.network-focus-name {
+  display: inline-block !important;
+  color: #ffffff !important;
+  font-size: 17px !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.2px !important;
+}
+
+.network-focus-description {
+  display: block !important;
+  color: #8996ad !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 650px) {
+  .network-focus-heading {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+  }
+
+  .network-focus-label,
+  .network-focus-name {
+    font-size: 15px !important;
+  }
+}
+
+/* =====================================================
+   NETWORK FOCUS — SPACING FIX
+   Additive only — existing CSS untouched
+   ===================================================== */
+
+.network-focus-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.network-focus-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.network-focus-label {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.network-focus-name {
+  display: inline-block;
+  margin-left: 2px;
+}
+
+.network-focus-description {
+  display: block;
+  margin-top: 2px;
+}

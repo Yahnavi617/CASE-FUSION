@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import NetworkGraph from '../components/NetworkGraph';
 import LeadExplanation from '../components/LeadExplanation';
-
-import {
-  getCase,
-  getLeads,
-  analyzeCase,
-} from '../services/api';
+import InvestigationIntel from '../components/InvestigationIntel';
+import { getCase, getLeads, analyzeCase, } from '../services/api';
 
 function CaseWorkspace({ caseId, onBack }) {
   const [caseInfo, setCaseInfo] = useState(null);
@@ -70,7 +66,7 @@ function CaseWorkspace({ caseId, onBack }) {
 
       setError(
         err.message ||
-          'Failed to load investigation.'
+        'Failed to load investigation.'
       );
     } finally {
       setLoading(false);
@@ -109,7 +105,7 @@ function CaseWorkspace({ caseId, onBack }) {
 
       setError(
         err.message ||
-          'Failed to analyze case.'
+        'Failed to analyze case.'
       );
     } finally {
       setAnalyzing(false);
@@ -354,8 +350,7 @@ function CaseWorkspace({ caseId, onBack }) {
     link.href = url;
 
     link.download =
-      `${
-        caseInfo?.caseId || 'case'
+      `${caseInfo?.caseId || 'case'
       }-leads.csv`;
 
     document.body.appendChild(link);
@@ -502,11 +497,10 @@ function CaseWorkspace({ caseId, onBack }) {
 
         <div className="workspace-actions">
           <span
-            className={`workspace-status ${
-              isAnalyzed
+            className={`workspace-status ${isAnalyzed
                 ? 'status-analyzed'
                 : 'status-uploaded'
-            }`}
+              }`}
           >
             {caseInfo?.status}
           </span>
@@ -570,8 +564,8 @@ function CaseWorkspace({ caseId, onBack }) {
           <strong>
             {caseInfo?.createdAt
               ? new Date(
-                  caseInfo.createdAt
-                ).toLocaleDateString()
+                caseInfo.createdAt
+              ).toLocaleDateString()
               : '—'}
           </strong>
         </div>
@@ -584,8 +578,8 @@ function CaseWorkspace({ caseId, onBack }) {
           <strong>
             {caseInfo?.analyzedAt
               ? new Date(
-                  caseInfo.analyzedAt
-                ).toLocaleDateString()
+                caseInfo.analyzedAt
+              ).toLocaleDateString()
               : '—'}
           </strong>
         </div>
@@ -812,30 +806,29 @@ function CaseWorkspace({ caseId, onBack }) {
           <section className="main-network-section">
 
             <div className="network-focus-bar">
-              <div>
-                <span>
+              <div className="network-focus-heading">
+                <span className="network-focus-label">
                   NETWORK FOCUS
                 </span>
 
-                <strong>
+                <strong className="network-focus-name">
                   {networkLead?.label ||
                     leads[0]?.label ||
                     'Primary Entity'}
                 </strong>
               </div>
 
-              <small>
-                Select a lead below to
-                change the network focus.
+              <small className="network-focus-description">
+                Select a lead below to change the network focus.
               </small>
             </div>
-
             <NetworkGraph
               caseId={caseId}
               selectedLead={
                 networkLead
               }
             />
+            <InvestigationIntel caseId={caseId} />
 
           </section>
         )}
@@ -963,11 +956,10 @@ function CaseWorkspace({ caseId, onBack }) {
 
                   <button
                     type="button"
-                    className={`lead-filter-button ${
-                      riskFilter === 'all'
+                    className={`lead-filter-button ${riskFilter === 'all'
                         ? 'active'
                         : ''
-                    }`}
+                      }`}
                     onClick={() =>
                       setRiskFilter('all')
                     }
@@ -977,11 +969,10 @@ function CaseWorkspace({ caseId, onBack }) {
 
                   <button
                     type="button"
-                    className={`lead-filter-button ${
-                      riskFilter === 'high'
+                    className={`lead-filter-button ${riskFilter === 'high'
                         ? 'active'
                         : ''
-                    }`}
+                      }`}
                     onClick={() =>
                       setRiskFilter('high')
                     }
@@ -991,11 +982,10 @@ function CaseWorkspace({ caseId, onBack }) {
 
                   <button
                     type="button"
-                    className={`lead-filter-button ${
-                      riskFilter === 'medium'
+                    className={`lead-filter-button ${riskFilter === 'medium'
                         ? 'active'
                         : ''
-                    }`}
+                      }`}
                     onClick={() =>
                       setRiskFilter('medium')
                     }
@@ -1005,11 +995,10 @@ function CaseWorkspace({ caseId, onBack }) {
 
                   <button
                     type="button"
-                    className={`lead-filter-button ${
-                      riskFilter === 'low'
+                    className={`lead-filter-button ${riskFilter === 'low'
                         ? 'active'
                         : ''
-                    }`}
+                      }`}
                     onClick={() =>
                       setRiskFilter('low')
                     }
@@ -1122,11 +1111,10 @@ function CaseWorkspace({ caseId, onBack }) {
 
                       return (
                         <div
-                          className={`lead-card ${
-                            isNetworkSelected
+                          className={`lead-card ${isNetworkSelected
                               ? 'lead-card-selected'
                               : ''
-                          }`}
+                            }`}
                           key={lead.id}
                           onClick={() =>
                             handleNetworkSelect(
@@ -1138,9 +1126,9 @@ function CaseWorkspace({ caseId, onBack }) {
                           ) => {
                             if (
                               event.key ===
-                                'Enter' ||
+                              'Enter' ||
                               event.key ===
-                                ' '
+                              ' '
                             ) {
                               event.preventDefault();
 
@@ -1228,7 +1216,7 @@ function CaseWorkspace({ caseId, onBack }) {
                                   {Math.round(
                                     Number(
                                       signals.financial ||
-                                        0
+                                      0
                                     ) * 100
                                   )}
                                 </strong>
@@ -1243,7 +1231,7 @@ function CaseWorkspace({ caseId, onBack }) {
                                   {Math.round(
                                     Number(
                                       signals.communication ||
-                                        0
+                                      0
                                     ) * 100
                                   )}
                                 </strong>
@@ -1258,7 +1246,7 @@ function CaseWorkspace({ caseId, onBack }) {
                                   {Math.round(
                                     Number(
                                       signals.crossSource ||
-                                        0
+                                      0
                                     ) * 100
                                   )}
                                 </strong>
@@ -1273,7 +1261,7 @@ function CaseWorkspace({ caseId, onBack }) {
                                   {Math.round(
                                     Number(
                                       signals.temporal ||
-                                        0
+                                      0
                                     ) * 100
                                   )}
                                 </strong>
@@ -1288,7 +1276,7 @@ function CaseWorkspace({ caseId, onBack }) {
                                   {Math.round(
                                     Number(
                                       signals.centrality ||
-                                        0
+                                      0
                                     ) * 100
                                   )}
                                 </strong>
@@ -1298,38 +1286,38 @@ function CaseWorkspace({ caseId, onBack }) {
 
                             {lead.reasons?.length >
                               0 && (
-                              <div className="lead-reasons">
+                                <div className="lead-reasons">
 
-                                <span>
-                                  KEY SIGNALS
-                                </span>
+                                  <span>
+                                    KEY SIGNALS
+                                  </span>
 
-                                <ul>
+                                  <ul>
 
-                                  {lead.reasons
-                                    .slice(
-                                      0,
-                                      2
-                                    )
-                                    .map(
-                                      (
-                                        reason,
-                                        reasonIndex
-                                      ) => (
-                                        <li
-                                          key={
-                                            reasonIndex
-                                          }
-                                        >
-                                          {reason}
-                                        </li>
+                                    {lead.reasons
+                                      .slice(
+                                        0,
+                                        2
                                       )
-                                    )}
+                                      .map(
+                                        (
+                                          reason,
+                                          reasonIndex
+                                        ) => (
+                                          <li
+                                            key={
+                                              reasonIndex
+                                            }
+                                          >
+                                            {reason}
+                                          </li>
+                                        )
+                                      )}
 
-                                </ul>
+                                  </ul>
 
-                              </div>
-                            )}
+                                </div>
+                              )}
 
                             <div className="lead-actions">
 

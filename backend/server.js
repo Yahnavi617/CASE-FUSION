@@ -1465,6 +1465,411 @@ app.get(
 
 );
 
+
+// =====================================================
+// GET CROSS-CASE CONNECTIONS
+// =====================================================
+
+app.get(
+    '/api/cases/:caseId/cross-case',
+    (req, res) => {
+
+        try {
+
+            const { caseId } = req.params;
+
+            const currentCaseDir = path.join(
+                CASES_DIR,
+                caseId
+            );
+
+            if (!fs.existsSync(currentCaseDir)) {
+
+                return res.status(404).json({
+                    success: false,
+                    message: 'Case not found'
+                });
+
+            }
+
+            const currentEntitiesPath =
+                path.join(
+                    currentCaseDir,
+                    'Entities.csv'
+                );
+
+            if (!fs.existsSync(currentEntitiesPath)) {
+
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'Current case entities file is missing'
+                });
+
+            }
+
+            const currentEntities =
+                parseCSV(currentEntitiesPath);
+
+            const connections = [];
+
+            /*
+             * Normalize values so that:
+             * +91 98765 43210
+             * 9876543210
+             * are treated as the same identifier.
+             */
+
+            function normalize(value) {
+
+                if (
+                    value === undefined ||
+                    value === null
+                ) {
+                    return '';
+                }
+
+                return String(value)
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[\s\-()]/g, '');
+
+            }
+
+            /*
+             * Build identifiers for the current case.
+             */
+
+            const currentIdentifiers = [];
+
+            currentEntities.forEach(
+                (entity) => {
+
+                    const identifiers = [
+                        {
+                            type: 'PHONE',
+                            value:
+                                normalize(
+                                    entity.phone
+                                )
+                        },
+                        {
+                            type: 'ACCOUNT',
+                            value:
+                                normalize(
+                                    entity.account
+                                )
+                        },
+                        {
+                            type: 'HANDLE',
+                            value:
+                                normalize(
+                                    entity.handle
+                                )
+                        },
+                        {
+                            type: 'DEVICE',
+                            value:
+                                normalize(
+                                    entity.device_id
+                                )
+                        },
+                        {
+                            type: 'IP',
+                            value:
+                                normalize(
+                                    entity.ip
+                                )
+                        },
+                    ];
+
+                    identifiers.forEach(
+                        (identifier) => {
+
+                            if (
+                                identifier.value
+                            ) {
+
+                                currentIdentifiers.push({
+
+                                    entityId:
+                                        entity.id ||
+                                        entity.entity_id ||
+                                        entity.name ||
+                                        'Unknown',
+
+                                    entityName:
+                                        entity.label ||
+                                        entity.name ||
+                                        entity.id ||
+                                        'Unknown',
+
+                                    ...identifier
+
+                                });
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+            /*
+             * Scan every other case.
+             */
+
+            const caseFolders =
+                fs.readdirSync(
+                    CASES_DIR
+                );
+
+            caseFolders.forEach(
+                (otherCaseId) => {
+
+                    if (
+                        otherCaseId === caseId
+                    ) {
+                        return;
+                    }
+
+                    const otherCaseDir =
+                        path.join(
+                            CASES_DIR,
+                            otherCaseId
+                        );
+
+                    const otherCaseFile =
+                        path.join(
+                            otherCaseDir,
+                            'case.json'
+                        );
+
+                    const otherEntitiesFile =
+                        path.join(
+                            otherCaseDir,
+                            'Entities.csv'
+                        );
+
+                    if (
+                        !fs.existsSync(
+                            otherCaseFile
+                        ) ||
+                        !fs.existsSync(
+                            otherEntitiesFile
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const otherCase =
+                        JSON.parse(
+                            fs.readFileSync(
+                                otherCaseFile,
+                                'utf8'
+                            )
+                        );
+
+                    const otherEntities =
+                        parseCSV(
+                            otherEntitiesFile
+                        );
+
+                    otherEntities.forEach(
+                        (otherEntity) => {
+
+                            const otherIdentifiers = [
+                                {
+                                    type: 'PHONE',
+                                    value:
+                                        normalize(
+                                            otherEntity.phone
+                                        )
+                                },
+                                {
+                                    type: 'ACCOUNT',
+                                    value:
+                                        normalize(
+                                            otherEntity.account
+                                        )
+                                },
+                                {
+                                    type: 'HANDLE',
+                                    value:
+                                        normalize(
+                                            otherEntity.handle
+                                        )
+                                },
+                                {
+                                    type: 'DEVICE',
+                                    value:
+                                        normalize(
+                                            otherEntity.device_id
+                                        )
+                                },
+                                {
+                                    type: 'IP',
+                                    value:
+                                        normalize(
+                                            otherEntity.ip
+                                        )
+                                },
+                            ];
+
+                            otherIdentifiers.forEach(
+                                (otherIdentifier) => {
+
+                                    if (
+                                        !otherIdentifier.value
+                                    ) {
+                                        return;
+                                    }
+
+                                    currentIdentifiers.forEach(
+                                        (currentIdentifier) => {
+
+                                            if (
+                                                currentIdentifier.type !==
+                                                otherIdentifier.type
+                                            ) {
+                                                return;
+                                            }
+
+                                            if (
+                                                currentIdentifier.value !==
+                                                otherIdentifier.value
+                                            ) {
+                                                return;
+                                            }
+
+                                            const connectionKey =
+                                                [
+                                                    caseId,
+                                                    otherCaseId,
+                                                    currentIdentifier.type,
+                                                    currentIdentifier.value,
+                                                ].join('|');
+
+                                            const alreadyExists =
+                                                connections.some(
+                                                    (item) =>
+                                                        item.connectionKey ===
+                                                        connectionKey
+                                                );
+
+                                            if (
+                                                alreadyExists
+                                            ) {
+                                                return;
+                                            }
+
+                                            connections.push({
+
+                                                id:
+                                                    `CROSS-${connections.length + 1}`,
+
+                                                connectionKey,
+
+                                                caseA:
+                                                    caseId,
+
+                                                caseB:
+                                                    otherCaseId,
+
+                                                caseAName:
+                                                    'Current Investigation',
+
+                                                caseBName:
+                                                    otherCase.name ||
+                                                    otherCaseId,
+
+                                                entityA:
+                                                    currentIdentifier.entityName,
+
+                                                entityB:
+                                                    otherEntity.label ||
+                                                    otherEntity.name ||
+                                                    otherEntity.id ||
+                                                    'Unknown',
+
+                                                connection:
+                                                    `Shared ${currentIdentifier.type}`,
+
+                                                identifier:
+                                                    currentIdentifier.value,
+
+                                                strength:
+                                                    currentIdentifier.type ===
+                                                    'DEVICE'
+                                                        ? 'High'
+                                                        : currentIdentifier.type ===
+                                                          'ACCOUNT'
+                                                        ? 'High'
+                                                        : 'Medium',
+
+                                                sources: [
+                                                    currentIdentifier.type
+                                                ],
+
+                                                reason:
+                                                    `Both investigations contain the same ${currentIdentifier.type.toLowerCase()} identifier.`,
+
+                                                firstObserved:
+                                                    otherCase.createdAt ||
+                                                    null,
+
+                                            });
+
+                                        }
+                                    );
+
+                                }
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+            return res.json({
+
+                success: true,
+
+                caseId,
+
+                count:
+                    connections.length,
+
+                connections
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                'Cross-case analysis error:',
+                error
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Failed to build cross-case connections'
+
+            });
+
+        }
+
+    }
+
+);
+
 // =====================================================
 // GET LEADS FOR SPECIFIC CASE
 // =====================================================

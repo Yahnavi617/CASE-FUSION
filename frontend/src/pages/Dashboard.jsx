@@ -1,32 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCases } from '../services/api';
+import './Dashboard.css';
 
 function Dashboard({
   onNewInvestigation,
+  onOpenInvestigations,
   onOpenCase,
 }) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // =========================
-  // SEARCH / FILTER / SORT
-  // =========================
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] =
-    useState('all');
-
-  const [sortOption, setSortOption] =
-    useState('newest');
-
-  // =========================
-  // LOAD CASES
-  // =========================
-
-  useEffect(() => {
-    loadCases();
-  }, []);
 
   async function loadCases() {
     try {
@@ -35,911 +18,825 @@ function Dashboard({
 
       const data = await getCases();
 
-      setCases(
-        Array.isArray(data?.cases)
-          ? data.cases
-          : []
-      );
-    } catch (err) {
-      console.error(
-        'Failed to load investigations:',
-        err
-      );
+      const list = Array.isArray(data)
+        ? data
+        : data?.cases || data?.data || [];
 
+      setCases(list);
+    } catch (err) {
+      console.error('Failed to load investigations:', err);
       setError(
-        err?.message ||
-          'Failed to load investigations.'
+        err.message || 'Failed to load investigations.'
       );
     } finally {
       setLoading(false);
     }
   }
 
-  // =========================
-  // DASHBOARD METRICS
-  // =========================
+  useEffect(() => {
+    loadCases();
+  }, []);
 
-  const analyzedCases = useMemo(
-    () =>
-      cases.filter(
-        (item) =>
-          item?.status === 'analyzed'
-      ).length,
-    [cases]
-  );
+  const dashboardStats = useMemo(() => {
+    const total = cases.length;
 
-  const uploadedCases = useMemo(
-    () =>
-      cases.filter(
-        (item) =>
-          item?.status === 'uploaded'
-      ).length,
-    [cases]
-  );
+    const analyzed = cases.filter((item) => {
+      const status = String(
+        item.status || item.caseStatus || ''
+      ).toLowerCase();
 
-  const priorityLeads = useMemo(
-    () =>
-      cases.reduce(
-        (total, item) =>
-          total +
-          Number(item?.leadCount || 0),
-        0
-      ),
-    [cases]
-  );
+      return (
+        status === 'analyzed' ||
+        status === 'complete' ||
+        status === 'completed'
+      );
+    }).length;
 
-  const analysisRate = useMemo(() => {
-    if (!cases.length) {
-      return 0;
-    }
+    const priorityLeads = cases.reduce(
+      (totalLeads, item) => {
+        const leads =
+          item.leads ||
+          item.priorityLeads ||
+          item.leadCount ||
+          [];
 
-    return Math.round(
-      (analyzedCases / cases.length) * 100
-    );
-  }, [cases.length, analyzedCases]);
-
-  // =========================
-  // FILTER + SEARCH + SORT
-  // =========================
-
-  const filteredCases = useMemo(() => {
-    const search = searchTerm
-      .trim()
-      .toLowerCase();
-
-    const matchingCases = cases.filter(
-      (item) => {
-        const name =
-          String(item?.name || '')
-            .toLowerCase();
-
-        const caseId =
-          String(item?.caseId || '')
-            .toLowerCase();
-
-        const matchesSearch =
-          !search ||
-          name.includes(search) ||
-          caseId.includes(search);
-
-        const matchesStatus =
-          statusFilter === 'all' ||
-          item?.status === statusFilter;
-
-        return (
-          matchesSearch &&
-          matchesStatus
-        );
-      }
-    );
-
-    return [...matchingCases].sort(
-      (a, b) => {
-        switch (sortOption) {
-          case 'oldest': {
-            const dateA = a?.createdAt
-              ? new Date(
-                  a.createdAt
-                ).getTime()
-              : 0;
-
-            const dateB = b?.createdAt
-              ? new Date(
-                  b.createdAt
-                ).getTime()
-              : 0;
-
-            return dateA - dateB;
-          }
-
-          case 'leads-high':
-            return (
-              Number(b?.leadCount || 0) -
-              Number(a?.leadCount || 0)
-            );
-
-          case 'leads-low':
-            return (
-              Number(a?.leadCount || 0) -
-              Number(b?.leadCount || 0)
-            );
-
-          case 'newest':
-          default: {
-            const dateA = a?.createdAt
-              ? new Date(
-                  a.createdAt
-                ).getTime()
-              : 0;
-
-            const dateB = b?.createdAt
-              ? new Date(
-                  b.createdAt
-                ).getTime()
-              : 0;
-
-            return dateB - dateA;
-          }
+        if (Array.isArray(leads)) {
+          return totalLeads + leads.length;
         }
-      }
+
+        if (typeof leads === 'number') {
+          return totalLeads + leads;
+        }
+
+        return totalLeads;
+      },
+      0
     );
-  }, [
-    cases,
-    searchTerm,
-    statusFilter,
-    sortOption,
-  ]);
 
-  // =========================
-  // HELPERS
-  // =========================
+    return {
+      total,
+      analyzed,
+      priorityLeads,
+    };
+  }, [cases]);
 
-  function clearFilters() {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setSortOption('newest');
-  }
+  const recentCases = useMemo(() => {
+    return cases.slice(0, 5);
+  }, [cases]);
 
-  function formatDate(date) {
-    if (!date) {
+  const formatDate = (value) => {
+    if (!value) {
       return '—';
     }
 
-    const parsedDate = new Date(date);
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const getCaseName = (item) => {
+    return (
+      item.caseName ||
+      item.name ||
+      item.title ||
+      'Untitled Investigation'
+    );
+  };
+
+  const getCaseId = (item) => {
+    return (
+      item.caseId ||
+      item.id ||
+      item._id ||
+      '—'
+    );
+  };
+
+  const getStatus = (item) => {
+    return (
+      item.status ||
+      item.caseStatus ||
+      'Uploaded'
+    );
+  };
+
+  const getLeadCount = (item) => {
+    const leads =
+      item.leads ||
+      item.priorityLeads ||
+      item.leadCount;
+
+    if (Array.isArray(leads)) {
+      return leads.length;
+    }
+
+    if (typeof leads === 'number') {
+      return leads;
+    }
+
+    return 0;
+  };
+
+  const getRisk = (item) => {
+    const risk =
+      item.risk ||
+      item.riskLevel ||
+      item.priority ||
+      '';
+
+    if (!risk) {
+      return 'Low';
+    }
+
+    return String(risk);
+  };
+
+  const getLastUpdated = (item) => {
+    return (
+      item.updatedAt ||
+      item.updated ||
+      item.analyzedAt ||
+      item.createdAt
+    );
+  };
+
+  const getStatusClass = (status) => {
+    const value = String(status).toLowerCase();
 
     if (
-      Number.isNaN(
-        parsedDate.getTime()
-      )
+      value.includes('analy')
     ) {
-      return '—';
+      return 'cf-status-analyzed';
     }
 
-    return parsedDate.toLocaleDateString(
-      undefined,
-      {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      }
-    );
-  }
-
-  function formatStatus(status) {
-    if (!status) {
-      return 'Unknown';
+    if (
+      value.includes('archive')
+    ) {
+      return 'cf-status-archived';
     }
 
-    return String(status)
-      .charAt(0)
-      .toUpperCase() +
-      String(status).slice(1);
-  }
+    return 'cf-status-uploaded';
+  };
+
+  const getRiskClass = (risk) => {
+    const value = String(risk).toLowerCase();
+
+    if (value.includes('high')) {
+      return 'cf-risk-high';
+    }
+
+    if (value.includes('medium')) {
+      return 'cf-risk-medium';
+    }
+
+    return 'cf-risk-low';
+  };
 
   return (
-    <div className="app dashboard-app">
-      {/* =====================================================
-          TOP BAR
-      ====================================================== */}
+    <div className="cf-dashboard">
 
-      <header className="topbar dashboard-topbar">
-        <div className="brand">
-          <div className="brand-mark">
-            C
+      {/* =========================
+          SIDEBAR
+      ========================== */}
+
+      <aside className="cf-sidebar">
+
+        <div className="cf-brand">
+          <div className="cf-brand-icon">
+            <span>♜</span>
           </div>
 
           <div>
-            <h1>CASEFUSION</h1>
+            <div className="cf-brand-name">
+              CASEFUSION
+            </div>
 
-            <p>
-              Investigation Intelligence Platform
-            </p>
+            <div className="cf-brand-subtitle">
+              Investigative Intel
+            </div>
           </div>
         </div>
 
         <button
           type="button"
-          className="new-case-btn"
+          className="cf-new-investigation"
           onClick={onNewInvestigation}
         >
-          <span className="new-case-plus">
-            +
-          </span>
-
-          <span>
-            New Investigation
-          </span>
+          <span className="cf-plus">＋</span>
+          <span>New Investigation</span>
         </button>
-      </header>
 
-      {/* =====================================================
-          MAIN DASHBOARD
-      ====================================================== */}
+        <nav className="cf-sidebar-nav">
 
-      <main className="dashboard">
-        {/* ===================================================
-            HERO
-        ==================================================== */}
+          <button
+            type="button"
+            className="cf-nav-item cf-nav-active"
+          >
+            <span className="cf-nav-icon">⌂</span>
+            <span>Home</span>
+          </button>
 
-        <section className="dashboard-hero">
-          <div className="dashboard-hero-content">
-            <div>
-              <p className="section-label">
-                COMMAND CENTER
-              </p>
+          <button
+  type="button"
+  className="cf-nav-item"
+  onClick={onOpenInvestigations}
+>
+  <span className="cf-nav-icon">▣</span>
+  <span>Cases</span>
+</button>
 
-              <h2>
-                Investigation Dashboard
-              </h2>
+          <button
+            type="button"
+            className="cf-nav-item"
+          >
+            <span className="cf-nav-icon">⌘</span>
+            <span>Visualizer</span>
+          </button>
 
-              <p className="hero-text">
-                Analyze cross-source intelligence,
-                track investigations, and surface
-                high-priority leads.
-              </p>
-            </div>
+          <button
+            type="button"
+            className="cf-nav-item"
+          >
+            <span className="cf-nav-icon">▥</span>
+            <span>Reports</span>
+          </button>
 
-            <div className="hero-status">
-              <span className="hero-status-dot" />
+          <button
+            type="button"
+            className="cf-nav-item"
+          >
+            <span className="cf-nav-icon">♧</span>
+            <span>Personnel</span>
+          </button>
 
-              <div>
-                <strong>
-                  Intelligence System
-                </strong>
+          <button
+            type="button"
+            className="cf-nav-item"
+          >
+            <span className="cf-nav-icon">⚙</span>
+            <span>Settings</span>
+          </button>
 
-                <small>
-                  Ready for investigation
-                </small>
-              </div>
+        </nav>
+
+        <div className="cf-sidebar-profile">
+          <div className="cf-profile-icon">
+            ♙
+          </div>
+
+          <div>
+            <div className="cf-profile-title">
+              Investigator Profile
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* ===================================================
-            STATS
-        ==================================================== */}
+      </aside>
 
-        <section
-          className="stats-grid dashboard-stats-grid"
-          aria-label="Investigation statistics"
-        >
-          <div className="stat-card dashboard-stat-card">
-            <div className="stat-card-top">
-              <span>
-                TOTAL CASES
+
+      {/* =========================
+          MAIN AREA
+      ========================== */}
+
+      <main className="cf-main">
+
+        {/* TOP NAVIGATION */}
+
+        <header className="cf-topbar">
+
+          <nav className="cf-top-tabs">
+
+            <button className="cf-top-tab cf-top-tab-active">
+              Overview
+            </button>
+
+            <button className="cf-top-tab">
+              Evidence
+            </button>
+
+            <button className="cf-top-tab">
+              Leads
+            </button>
+
+            <button className="cf-top-tab">
+              Network
+            </button>
+
+            <button className="cf-top-tab">
+              Reports
+            </button>
+
+          </nav>
+
+          <div className="cf-top-actions">
+
+            <div className="cf-search">
+              <span className="cf-search-icon">
+                ⌕
               </span>
 
-              <div className="stat-icon">
-                ◫
-              </div>
-            </div>
-
-            <strong>
-              {cases.length}
-            </strong>
-
-            <small>
-              Investigations created
-            </small>
-          </div>
-
-          <div className="stat-card dashboard-stat-card">
-            <div className="stat-card-top">
-              <span>
-                ANALYZED CASES
-              </span>
-
-              <div className="stat-icon stat-icon-success">
-                ✓
-              </div>
-            </div>
-
-            <strong>
-              {analyzedCases}
-            </strong>
-
-            <small>
-              {analysisRate}% of all cases analyzed
-            </small>
-          </div>
-
-          <div className="stat-card dashboard-stat-card">
-            <div className="stat-card-top">
-              <span>
-                PRIORITY LEADS
-              </span>
-
-              <div className="stat-icon stat-icon-lead">
-                !
-              </div>
-            </div>
-
-            <strong>
-              {priorityLeads}
-            </strong>
-
-            <small>
-              Leads identified across cases
-            </small>
-          </div>
-        </section>
-
-        {/* ===================================================
-            QUICK STATUS OVERVIEW
-        ==================================================== */}
-
-        <section className="dashboard-overview-strip">
-          <div className="overview-strip-item">
-            <div className="overview-strip-indicator analyzed" />
-
-            <div>
-              <span>
-                ANALYZED
-              </span>
-
-              <strong>
-                {analyzedCases}
-              </strong>
-            </div>
-          </div>
-
-          <div className="overview-strip-item">
-            <div className="overview-strip-indicator uploaded" />
-
-            <div>
-              <span>
-                AWAITING ANALYSIS
-              </span>
-
-              <strong>
-                {uploadedCases}
-              </strong>
-            </div>
-          </div>
-
-          <div className="overview-strip-item">
-            <div className="overview-strip-indicator leads" />
-
-            <div>
-              <span>
-                LEAD DENSITY
-              </span>
-
-              <strong>
-                {cases.length
-                  ? (
-                      priorityLeads /
-                      cases.length
-                    ).toFixed(1)
-                  : '0.0'}
-                <small>
-                  {' '}
-                  leads/case
-                </small>
-              </strong>
-            </div>
-          </div>
-
-          <div className="overview-strip-item">
-            <div className="overview-strip-indicator system" />
-
-            <div>
-              <span>
-                PLATFORM STATUS
-              </span>
-
-              <strong>
-                Operational
-              </strong>
-            </div>
-          </div>
-        </section>
-
-        {/* ===================================================
-            INVESTIGATIONS
-        ==================================================== */}
-
-        <section className="investigations dashboard-investigations">
-          <div className="section-heading dashboard-section-heading">
-            <div>
-              <p className="section-label">
-                CASE MANAGEMENT
-              </p>
-
-              <h3>
-                Recent Investigations
-              </h3>
-
-              <p className="section-description">
-                Search, filter, and open your
-                investigation workspace.
-              </p>
+              <input
+                type="text"
+                placeholder="Search entity, ID, or keyword..."
+              />
             </div>
 
             <button
               type="button"
-              className="view-all-btn dashboard-refresh-btn"
-              onClick={loadCases}
-              disabled={loading}
+              className="cf-icon-button"
+              title="Notifications"
             >
-              <span
-                className={
-                  loading
-                    ? 'refresh-icon refresh-spinning'
-                    : 'refresh-icon'
-                }
-              >
-                ↻
-              </span>
-
-              {loading
-                ? 'Refreshing'
-                : 'Refresh'}
+              ♧
             </button>
+
+            <button
+              type="button"
+              className="cf-icon-button"
+              title="Help"
+            >
+              ?
+            </button>
+
+            <div className="cf-user-avatar">
+              I
+            </div>
+
           </div>
 
-          {/* ERROR */}
+        </header>
 
-          {error && (
-            <div
-              className="dashboard-error"
-              role="alert"
-            >
-              <span className="dashboard-error-icon">
-                !
-              </span>
 
-              <div>
-                <strong>
-                  Unable to load investigations
-                </strong>
+        {/* PAGE CONTENT */}
 
-                <p>
-                  {error}
-                </p>
-              </div>
+        <section className="cf-content">
 
-              <button
-                type="button"
-                onClick={loadCases}
-                disabled={loading}
-              >
-                Retry
-              </button>
-            </div>
-          )}
+          <div className="cf-page-heading">
 
-          {/* LOADING */}
+            <h1>
+              Investigation Dashboard
+            </h1>
 
-          {loading && (
-            <div className="dashboard-loading dashboard-loading-enhanced">
-              <div className="loading-spinner" />
+            <p>
+              Monitor active investigations,
+              high-priority leads and critical
+              intelligence signals.
+            </p>
 
-              <div>
-                <strong>
-                  Loading investigations
-                </strong>
+          </div>
 
+
+          {/* =========================
+              STAT CARDS
+          ========================== */}
+
+          <div className="cf-stat-grid">
+
+            <div className="cf-stat-card">
+
+              <div className="cf-stat-top">
                 <span>
-                  Syncing case intelligence...
+                  ACTIVE INVESTIGATIONS
                 </span>
+
+                <div className="cf-stat-icon cf-icon-purple">
+                  ◫
+                </div>
               </div>
+
+              <strong>
+                {loading
+                  ? '—'
+                  : dashboardStats.total}
+              </strong>
+
             </div>
-          )}
 
-          {/* =================================================
-              EMPTY — NO CASES
-          ================================================== */}
 
-          {!loading &&
-            cases.length === 0 && (
-              <div className="empty-state dashboard-empty-state">
-                <div className="empty-icon">
-                  +
+            <div className="cf-stat-card">
+
+              <div className="cf-stat-top">
+                <span>
+                  REQUIRES REVIEW
+                </span>
+
+                <div className="cf-stat-icon cf-icon-gold">
+                  ▣
                 </div>
+              </div>
 
-                <div className="empty-state-label">
-                  NO ACTIVE INVESTIGATIONS
+              <strong>
+                {loading
+                  ? '—'
+                  : Math.max(
+                      dashboardStats.total -
+                        dashboardStats.analyzed,
+                      0
+                    )}
+              </strong>
+
+            </div>
+
+
+            <div className="cf-stat-card">
+
+              <div className="cf-stat-top">
+                <span>
+                  PRIORITY LEADS
+                </span>
+
+                <div className="cf-stat-icon cf-icon-orange">
+                  ◎
                 </div>
+              </div>
 
-                <h3>
-                  Start your first investigation
-                </h3>
+              <strong>
+                {loading
+                  ? '—'
+                  : dashboardStats.priorityLeads}
+              </strong>
 
-                <p>
-                  Create an investigation by
-                  uploading the required datasets.
-                  CaseFusion will organize the
-                  intelligence and surface relevant
-                  leads.
-                </p>
+            </div>
+
+
+            <div className="cf-stat-card">
+
+              <div className="cf-stat-top">
+                <span>
+                  CRITICAL ALERTS
+                </span>
+
+                <div className="cf-stat-icon cf-icon-red">
+                  △
+                </div>
+              </div>
+
+              <strong>
+                2
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          {/* =========================
+              LOWER DASHBOARD
+          ========================== */}
+
+          <div className="cf-dashboard-grid">
+
+            {/* RECENT INVESTIGATIONS */}
+
+            <section className="cf-panel cf-investigations-panel">
+
+              <div className="cf-panel-header">
+
+                <h2>
+                  Recent Investigations
+                </h2>
 
                 <button
-                  type="button"
-                  className="primary-btn"
-                  onClick={onNewInvestigation}
-                >
-                  <span>+</span>
-                  Create Investigation
-                </button>
+  type="button"
+  className="cf-view-all"
+  onClick={onOpenInvestigations}
+>
+  VIEW ALL
+  <span>→</span>
+</button>
+
               </div>
-            )}
 
-          {/* =================================================
-              CONTROLS
-          ================================================== */}
 
-          {!loading &&
-            cases.length > 0 && (
-              <>
-                <div className="case-controls dashboard-case-controls">
-                  <div className="case-search">
-                    <span
-                      className="case-search-icon"
-                      aria-hidden="true"
-                    >
-                      ⌕
-                    </span>
+              <div className="cf-table-wrapper">
 
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(event) =>
-                        setSearchTerm(
-                          event.target.value
-                        )
-                      }
-                      placeholder="Search investigations or Case ID..."
-                      aria-label="Search investigations"
-                    />
+                <table className="cf-table">
 
-                    {searchTerm && (
-                      <button
-                        type="button"
-                        className="clear-search"
-                        onClick={() =>
-                          setSearchTerm('')
-                        }
-                        aria-label="Clear search"
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
+                  <thead>
+                    <tr>
+                      <th>Case</th>
+                      <th>Case ID</th>
+                      <th>Status</th>
+                      <th>Risk</th>
+                      <th>Leads</th>
+                      <th>Last Updated</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
 
-                  <div
-                    className="case-filters"
-                    aria-label="Case status filters"
-                  >
-                    <button
-                      type="button"
-                      className={`case-filter-btn ${
-                        statusFilter === 'all'
-                          ? 'active'
-                          : ''
-                      }`}
-                      onClick={() =>
-                        setStatusFilter('all')
-                      }
-                    >
-                      All
-                      <span>
-                        {cases.length}
-                      </span>
-                    </button>
+                  <tbody>
 
-                    <button
-                      type="button"
-                      className={`case-filter-btn ${
-                        statusFilter === 'analyzed'
-                          ? 'active'
-                          : ''
-                      }`}
-                      onClick={() =>
-                        setStatusFilter(
-                          'analyzed'
-                        )
-                      }
-                    >
-                      Analyzed
-                      <span>
-                        {analyzedCases}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className={`case-filter-btn ${
-                        statusFilter === 'uploaded'
-                          ? 'active'
-                          : ''
-                      }`}
-                      onClick={() =>
-                        setStatusFilter(
-                          'uploaded'
-                        )
-                      }
-                    >
-                      Uploaded
-                      <span>
-                        {uploadedCases}
-                      </span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="case-sort-row dashboard-sort-row">
-                  <div className="case-results-info dashboard-results-info">
-                    <span>
-                      Showing{' '}
-                      <strong>
-                        {filteredCases.length}
-                      </strong>{' '}
-                      of{' '}
-                      <strong>
-                        {cases.length}
-                      </strong>{' '}
-                      investigations
-                    </span>
-                  </div>
-
-                  <div className="dashboard-sort-wrapper">
-                    <label
-                      htmlFor="case-sort"
-                      className="case-sort-label"
-                    >
-                      SORT BY
-                    </label>
-
-                    <select
-                      id="case-sort"
-                      className="case-sort-select"
-                      value={sortOption}
-                      onChange={(event) =>
-                        setSortOption(
-                          event.target.value
-                        )
-                      }
-                    >
-                      <option value="newest">
-                        Newest first
-                      </option>
-
-                      <option value="oldest">
-                        Oldest first
-                      </option>
-
-                      <option value="leads-high">
-                        Most leads
-                      </option>
-
-                      <option value="leads-low">
-                        Least leads
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                {(searchTerm ||
-                  statusFilter !== 'all' ||
-                  sortOption !== 'newest') && (
-                  <div className="dashboard-active-filters">
-                    <span>
-                      Filters active
-                    </span>
-
-                    {searchTerm && (
-                      <span className="active-filter-chip">
-                        Search: {searchTerm}
-                      </span>
+                    {loading && (
+                      <tr>
+                        <td
+                          colSpan="7"
+                          className="cf-table-message"
+                        >
+                          Loading investigations...
+                        </td>
+                      </tr>
                     )}
 
-                    {statusFilter !== 'all' && (
-                      <span className="active-filter-chip">
-                        Status:{' '}
-                        {formatStatus(
-                          statusFilter
-                        )}
-                      </span>
+                    {!loading && error && (
+                      <tr>
+                        <td
+                          colSpan="7"
+                          className="cf-table-message cf-table-error"
+                        >
+                          {error}
+                        </td>
+                      </tr>
                     )}
 
-                    {sortOption !== 'newest' && (
-                      <span className="active-filter-chip">
-                        Sorted
-                      </span>
-                    )}
+                    {!loading &&
+                      !error &&
+                      recentCases.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan="7"
+                            className="cf-table-message"
+                          >
+                            No investigations yet.
+                          </td>
+                        </tr>
+                      )}
 
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                    >
-                      Clear all
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+                    {!loading &&
+                      !error &&
+                      recentCases.map((item, index) => {
 
-          {/* =================================================
-              FILTERED EMPTY
-          ================================================== */}
+                        const status =
+                          getStatus(item);
 
-          {!loading &&
-            cases.length > 0 &&
-            filteredCases.length === 0 && (
-              <div className="empty-state filtered-empty-state dashboard-empty-state">
-                <div className="empty-icon">
-                  ⌕
-                </div>
+                        const risk =
+                          getRisk(item);
 
-                <div className="empty-state-label">
-                  NO MATCHES
-                </div>
+                        return (
+                          <tr
+                            key={
+                              getCaseId(item) ||
+                              index
+                            }
+                          >
 
-                <h3>
-                  No matching investigations
-                </h3>
+                            <td>
+                              <div className="cf-case-name">
 
-                <p>
-                  We couldn't find a case matching
-                  your current search or status
-                  filter.
-                </p>
+                                <span
+                                  className={
+                                    index === 0
+                                      ? 'cf-case-dot cf-dot-active'
+                                      : 'cf-case-dot'
+                                  }
+                                />
 
-                <button
-                  type="button"
-                  className="primary-btn"
-                  onClick={clearFilters}
-                >
-                  Clear Filters
-                </button>
-              </div>
-            )}
-
-          {/* =================================================
-              CASE LIST
-          ================================================== */}
-
-          {!loading &&
-            filteredCases.length > 0 && (
-              <div className="cases-list dashboard-cases-list">
-                {filteredCases.map(
-                  (item, index) => {
-                    const status =
-                      item?.status ||
-                      'unknown';
-
-                    const leadCount = Number(
-                      item?.leadCount || 0
-                    );
-
-                    return (
-                      <button
-                        type="button"
-                        className="case-row dashboard-case-row"
-                        key={
-                          item?.caseId ||
-                          `${item?.name || 'case'}-${index}`
-                        }
-                        onClick={() =>
-                          item?.caseId &&
-                          onOpenCase(
-                            item.caseId
-                          )
-                        }
-                      >
-                        <div className="case-row-main">
-                          <div
-                            className={`case-status-dot ${
-                              status ===
-                              'analyzed'
-                                ? 'case-dot-analyzed'
-                                : 'case-dot-uploaded'
-                            }`}
-                          />
-
-                          <div className="case-primary-info">
-                            <div className="case-title-line">
-                              <h4>
-                                {item?.name ||
-                                  'Untitled Investigation'}
-                              </h4>
-
-                              {status ===
-                                'analyzed' && (
-                                <span className="case-ready-badge">
-                                  ANALYZED
+                                <span>
+                                  {getCaseName(item)}
                                 </span>
-                              )}
-                            </div>
 
-                            <span className="case-id">
-                              {item?.caseId ||
-                                'No Case ID'}
-                            </span>
-                          </div>
-                        </div>
+                              </div>
+                            </td>
 
-                        <div className="case-row-meta">
-                          <div>
-                            <span>
-                              STATUS
-                            </span>
 
-                            <strong
-                              className={
-                                status ===
-                                'analyzed'
-                                  ? 'case-analyzed'
-                                  : 'case-uploaded'
-                              }
-                            >
-                              {formatStatus(
-                                status
-                              )}
-                            </strong>
-                          </div>
+                            <td>
+                              <span className="cf-case-id">
+                                {getCaseId(item)}
+                              </span>
+                            </td>
 
-                          <div>
-                            <span>
-                              LEADS
-                            </span>
 
-                            <strong
-                              className={
-                                leadCount > 0
-                                  ? 'case-leads-value'
-                                  : ''
-                              }
-                            >
-                              {leadCount}
-                            </strong>
-                          </div>
+                            <td>
+                              <span
+                                className={`cf-badge ${getStatusClass(
+                                  status
+                                )}`}
+                              >
+                                {status}
+                              </span>
+                            </td>
 
-                          <div>
-                            <span>
-                              CREATED
-                            </span>
 
-                            <strong>
+                            <td>
+                              <span
+                                className={`cf-badge ${getRiskClass(
+                                  risk
+                                )}`}
+                              >
+                                {risk}
+                              </span>
+                            </td>
+
+
+                            <td>
+                              {getLeadCount(item)}
+                            </td>
+
+
+                            <td>
                               {formatDate(
-                                item?.createdAt
+                                getLastUpdated(item)
                               )}
-                            </strong>
-                          </div>
+                            </td>
 
-                          <div className="case-arrow">
-                            →
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  }
-                )}
+
+                            <td>
+  <button
+    type="button"
+    className="cf-action-button"
+    onClick={() => {
+      const caseId = getCaseId(item);
+
+      console.log('Opening case:', caseId);
+
+      if (caseId && caseId !== '—') {
+        onOpenCase?.(caseId);
+      }
+    }}
+  >
+    Open
+  </button>
+</td>
+
+                          </tr>
+                        );
+                      })}
+
+                  </tbody>
+
+                </table>
+
               </div>
-            )}
+
+            </section>
+
+
+            {/* RIGHT COLUMN */}
+
+            <div className="cf-right-column">
+
+
+              {/* PRIORITY ALERTS */}
+
+              <section className="cf-panel cf-alert-panel">
+
+                <div className="cf-panel-header">
+
+                  <h2>
+                    <span className="cf-alert-title-icon">
+                      △
+                    </span>
+
+                    Priority Alerts
+                  </h2>
+
+                </div>
+
+
+                <div className="cf-alert-list">
+
+                  <div className="cf-alert cf-alert-high">
+
+                    <div className="cf-alert-top">
+
+                      <span className="cf-severity cf-severity-high">
+                        High Severity
+                      </span>
+
+                      <span className="cf-alert-time">
+                        14:37:44
+                      </span>
+
+                    </div>
+
+                    <strong>
+                      Call followed by large fund
+                      transfer
+                    </strong>
+
+                    <span className="cf-alert-case">
+                      ▱ Case: Loot
+                    </span>
+
+                  </div>
+
+
+                  <div className="cf-alert cf-alert-medium">
+
+                    <div className="cf-alert-top">
+
+                      <span className="cf-severity cf-severity-medium">
+                        Medium Severity
+                      </span>
+
+                      <span className="cf-alert-time">
+                        11:12:05
+                      </span>
+
+                    </div>
+
+                    <strong>
+                      Unusual login location detected
+                    </strong>
+
+                    <span className="cf-alert-case">
+                      ▱ Case: Enigma
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </section>
+
+
+              {/* RECENT ACTIVITY */}
+
+              <section className="cf-panel cf-activity-panel">
+
+                <div className="cf-panel-header">
+
+                  <h2>
+                    <span className="cf-activity-icon">
+                      ◷
+                    </span>
+
+                    Recent Activity
+                  </h2>
+
+                </div>
+
+
+                <div className="cf-activity-list">
+
+                  <div className="cf-activity-item">
+
+                    <span className="cf-activity-dot cf-activity-active" />
+
+                    <div>
+                      <strong>
+                        Investigation analyzed
+                      </strong>
+
+                      <span>
+                        Case: Loot • 10 mins ago
+                      </span>
+                    </div>
+
+                  </div>
+
+
+                  <div className="cf-activity-item">
+
+                    <span className="cf-activity-dot" />
+
+                    <div>
+                      <strong>
+                        Lead score updated
+                      </strong>
+
+                      <span>
+                        Entity: John Doe • 1 hr ago
+                      </span>
+                    </div>
+
+                  </div>
+
+
+                  <div className="cf-activity-item">
+
+                    <span className="cf-activity-dot" />
+
+                    <div>
+                      <strong>
+                        Document parsed and indexed
+                      </strong>
+
+                      <span>
+                        Source: DarkWeb • 3 hrs ago
+                      </span>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </section>
+
+            </div>
+
+          </div>
+
         </section>
+
       </main>
+
     </div>
   );
 }

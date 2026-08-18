@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { createCase } from '../services/api';
 
-function NewInvestigation({ onBack, onCreated }) {
-  const [caseName, setCaseName] = useState('');
-
+function NewInvestigation({
+  onBack,
+  onCreated,
+}) {
   const [files, setFiles] = useState({
     cdr: null,
     bank: null,
@@ -11,120 +12,163 @@ function NewInvestigation({ onBack, onCreated }) {
     entities: null,
   });
 
-  const [loading, setLoading] = useState(false);
+  const [caseName, setCaseName] = useState(
+    'Untitled Investigation'
+  );
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [createdCase, setCreatedCase] = useState(null);
+  const [creating, setCreating] = useState(false);
 
-  const cdrRef = useRef(null);
-  const bankRef = useRef(null);
-  const socialRef = useRef(null);
-  const entitiesRef = useRef(null);
+  const fileInputs = {
+    cdr: useRef(null),
+    bank: useRef(null),
+    social: useRef(null),
+    entities: useRef(null),
+  };
 
-  function handleFileChange(type, event) {
-    const file = event.target.files?.[0];
+  const uploadItems = [
+    {
+      key: 'cdr',
+      title: 'CDR Data',
+      description:
+        'Upload call detail records and communication logs.',
+      icon: '☎',
+      accent: 'cdr',
+    },
+    {
+      key: 'bank',
+      title: 'Bank Data',
+      description:
+        'Upload financial transactions and banking logs.',
+      icon: '▤',
+      accent: 'bank',
+    },
+    {
+      key: 'social',
+      title: 'Social Data',
+      description:
+        'Import social media intelligence and network exports.',
+      icon: '⌘',
+      accent: 'social',
+    },
+    {
+      key: 'entities',
+      title: 'Entities',
+      description:
+        'Upload known entities, aliases, and watchlists.',
+      icon: '♙',
+      accent: 'entities',
+    },
+  ];
+
+  const uploadedCount = Object.values(files).filter(
+    Boolean
+  ).length;
+
+  function formatFileSize(bytes) {
+    if (!bytes) {
+      return '0 KB';
+    }
+
+    if (bytes < 1024 * 1024) {
+      return `${Math.max(
+        1,
+        Math.round(bytes / 1024)
+      )} KB`;
+    }
+
+    return `${(
+      bytes /
+      (1024 * 1024)
+    ).toFixed(1)} MB`;
+  }
+
+  function handleFileChange(
+    key,
+    event
+  ) {
+    const file =
+      event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setError('Only CSV files are allowed.');
+    setError('');
+    setSuccess('');
+
+    if (
+      !file.name
+        .toLowerCase()
+        .endsWith('.csv')
+    ) {
+      setError(
+        `${file.name} is not a CSV file. Please choose a CSV file.`
+      );
+
       event.target.value = '';
       return;
     }
 
-    setError('');
-    setSuccess('');
-    setCreatedCase(null);
-
     setFiles((previous) => ({
       ...previous,
-      [type]: file,
+      [key]: file,
     }));
   }
 
-  // NEW: remove selected file
-  function handleRemoveFile(type) {
+  function removeFile(key) {
     setFiles((previous) => ({
       ...previous,
-      [type]: null,
+      [key]: null,
     }));
 
-    const refs = {
-      cdr: cdrRef,
-      bank: bankRef,
-      social: socialRef,
-      entities: entitiesRef,
-    };
-
-    if (refs[type]?.current) {
-      refs[type].current.value = '';
+    if (fileInputs[key].current) {
+      fileInputs[key].current.value = '';
     }
 
     setError('');
     setSuccess('');
-    setCreatedCase(null);
   }
 
-  const fileItems = [
-    {
-      key: 'cdr',
-      title: 'CDR Data',
-      description: 'Call detail records',
-      ref: cdrRef,
-    },
-    {
-      key: 'bank',
-      title: 'Bank Data',
-      description: 'Financial transactions',
-      ref: bankRef,
-    },
-    {
-      key: 'social',
-      title: 'Social Data',
-      description: 'Social activity records',
-      ref: socialRef,
-    },
-    {
-      key: 'entities',
-      title: 'Entities',
-      description: 'Known case entities',
-      ref: entitiesRef,
-    },
-  ];
-
-  const allFilesSelected =
-    files.cdr &&
-    files.bank &&
-    files.social &&
-    files.entities;
-
-  const selectedFileCount = Object.values(files).filter(
-    Boolean
-  ).length;
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-
+  async function handleReview() {
     setError('');
     setSuccess('');
-    setCreatedCase(null);
 
-    if (!caseName.trim()) {
-      setError('Please enter a case name.');
+    const missing = uploadItems
+      .filter((item) => !files[item.key])
+      .map((item) => item.title);
+
+    if (missing.length > 0) {
+      setError(
+        `Please upload all four datasets before continuing. Missing: ${missing.join(
+          ', '
+        )}.`
+      );
       return;
     }
 
-    if (!allFilesSelected) {
-      setError('Please upload all four CSV files.');
+    if (!caseName.trim()) {
+      setError(
+        'Investigation name is required.'
+      );
       return;
     }
 
     try {
-      setLoading(true);
+      setCreating(true);
 
-      const data = await createCase({
+      /*
+       * Existing backend expects:
+       * cdr
+       * bank
+       * social
+       * entities
+       *
+       * and caseName.
+       */
+
+      const response = await createCase({
         caseName: caseName.trim(),
         cdr: files.cdr,
         bank: files.bank,
@@ -132,253 +176,385 @@ function NewInvestigation({ onBack, onCreated }) {
         entities: files.entities,
       });
 
-      console.log('Case created successfully:', data);
-
-      setCreatedCase(data.case);
-
-      onCreated?.(data.case);
-
       setSuccess(
-        `Investigation created successfully: ${data.case.caseId}`
+        response?.message ||
+          'Investigation created successfully.'
       );
+
+      if (onCreated) {
+        onCreated(response);
+      }
     } catch (err) {
       console.error(
-        'Create investigation error:',
+        'Failed to create investigation:',
         err
       );
 
       setError(
-        err.message ||
-          'Something went wrong while creating the investigation.'
+        err?.message ||
+          'Failed to create investigation.'
       );
     } finally {
-      setLoading(false);
+      setCreating(false);
     }
   }
 
   return (
-    <div className="new-investigation-page">
-      <div className="page-header">
-        <button
-          type="button"
-          className="back-button"
-          onClick={onBack}
-          disabled={loading}
-        >
-          ← Back
-        </button>
+    <main className="new-investigation-page">
+
+      {/* =================================================
+          PAGE HEADER
+      ================================================= */}
+
+      <header className="new-investigation-header">
 
         <div>
-          <p className="section-label">NEW CASE</p>
+          <div className="new-investigation-kicker">
+            CASEFUSION / NEW CASE
+          </div>
 
-          <h2>New Investigation</h2>
+          <h1>
+            New Investigation
+          </h1>
 
-          <p className="page-description">
-            Create an investigation by providing the required
-            intelligence datasets.
+          <p>
+            Initialize case parameters and
+            upload initial intelligence datasets.
           </p>
         </div>
-      </div>
 
-      <form
-        className="investigation-form"
-        onSubmit={handleSubmit}
-      >
-        {error && (
-          <div className="form-message error-message">
-            {error}
-          </div>
-        )}
+        <button
+          type="button"
+          className="new-investigation-cancel"
+          onClick={onBack}
+        >
+          <span className="cancel-x">
+            ×
+          </span>
 
-        {success && (
-          <div className="form-message success-message">
-            {success}
-          </div>
-        )}
+          Cancel
+        </button>
 
-        <section className="form-section">
-          <div className="form-section-heading">
-            <span className="step-number">01</span>
+      </header>
 
-            <div>
-              <h3>Investigation Details</h3>
 
-              <p>
-                Give this investigation a name so it can be
-                identified later.
-              </p>
-            </div>
+      {/* =================================================
+          STEPPER
+      ================================================= */}
+
+      <section className="investigation-stepper">
+
+        <div className="stepper-line" />
+
+        <div className="investigation-step completed">
+          <div className="step-circle">
+            ✓
           </div>
 
-          <label className="input-label">
-            Case Name
+          <span>
+            01
+          </span>
 
-            <input
-              type="text"
-              value={caseName}
-              onChange={(event) => {
-                setCaseName(event.target.value);
-                setError('');
-                setSuccess('');
-                setCreatedCase(null);
-              }}
-              placeholder="e.g. Financial Network Investigation"
-              disabled={loading}
-            />
-          </label>
-        </section>
+          <strong>
+            Details
+          </strong>
+        </div>
 
-        <section className="form-section">
-          <div className="form-section-heading">
-            <span className="step-number">02</span>
-
-            <div>
-              <h3>Upload Intelligence Data</h3>
-
-              <p>
-                Upload all four CSV files required for analysis.
-              </p>
-            </div>
+        <div className="investigation-step active">
+          <div className="step-circle">
+            02
           </div>
 
-          <div className="upload-grid">
-            {fileItems.map((item) => {
-              const selectedFile = files[item.key];
+          <span>
+            02
+          </span>
 
-              return (
+          <strong>
+            Upload Data
+          </strong>
+        </div>
+
+        <div className="investigation-step">
+          <div className="step-circle">
+            03
+          </div>
+
+          <span>
+            03
+          </span>
+
+          <strong>
+            Review
+          </strong>
+        </div>
+
+        <div className="investigation-step">
+          <div className="step-circle">
+            04
+          </div>
+
+          <span>
+            04
+          </span>
+
+          <strong>
+            Create
+          </strong>
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          CASE NAME
+      ================================================= */}
+
+      <section className="investigation-name-row">
+
+        <label>
+          <span>
+            INVESTIGATION NAME
+          </span>
+
+          <input
+            type="text"
+            value={caseName}
+            onChange={(event) =>
+              setCaseName(
+                event.target.value
+              )
+            }
+            placeholder="Enter investigation name"
+          />
+        </label>
+
+      </section>
+
+
+      {/* =================================================
+          UPLOAD SECTION
+      ================================================= */}
+
+      <section className="upload-section">
+
+        <div className="upload-section-heading">
+          <h2>
+            Upload Intelligence Data
+          </h2>
+
+          <p>
+            Provide initial datasets to populate
+            the investigation matrix. All files
+            must be in CSV format.
+          </p>
+        </div>
+
+
+        {/* =================================================
+            UPLOAD GRID
+        ================================================= */}
+
+        <div className="upload-grid">
+
+          {uploadItems.map((item) => {
+            const selectedFile =
+              files[item.key];
+
+            return (
+              <article
+                key={item.key}
+                className={`intelligence-upload-card ${
+                  selectedFile
+                    ? 'uploaded'
+                    : ''
+                }`}
+              >
+
                 <div
-                  className={`upload-card ${
-                    selectedFile ? 'uploaded' : ''
-                  }`}
-                  key={item.key}
+                  className={`intelligence-upload-icon ${item.accent}`}
                 >
-                  <input
-                    ref={item.ref}
-                    type="file"
-                    accept=".csv"
-                    hidden
-                    disabled={loading}
-                    onChange={(event) =>
-                      handleFileChange(
-                        item.key,
-                        event
-                      )
-                    }
-                  />
+                  {selectedFile
+                    ? '✓'
+                    : item.icon}
+                </div>
 
-                  <div className="upload-icon">
-                    {selectedFile ? '✓' : '↑'}
-                  </div>
 
-                  <div className="upload-info">
-                    <h4>{item.title}</h4>
+                <div className="intelligence-upload-content">
 
-                    <p>{item.description}</p>
+                  <div className="intelligence-upload-title">
+                    <h3>
+                      {item.title}
+                    </h3>
 
                     {selectedFile && (
-                      <span className="file-name">
-                        {selectedFile.name}
+                      <span className="uploaded-badge">
+                        READY
                       </span>
                     )}
                   </div>
 
+                  <p>
+                    {item.description}
+                  </p>
+
+
+                  {selectedFile && (
+                    <div className="selected-file">
+
+                      <div className="selected-file-icon">
+                        ▣
+                      </div>
+
+                      <div className="selected-file-info">
+
+                        <strong>
+                          {selectedFile.name}
+                        </strong>
+
+                        <span>
+                          {formatFileSize(
+                            selectedFile.size
+                          )}
+                        </span>
+
+                      </div>
+
+                    </div>
+                  )}
+
+
                   <div className="upload-actions">
+
+                    <input
+                      ref={
+                        fileInputs[item.key]
+                      }
+                      type="file"
+                      accept=".csv,text/csv"
+                      hidden
+                      onChange={(event) =>
+                        handleFileChange(
+                          item.key,
+                          event
+                        )
+                      }
+                    />
+
                     <button
                       type="button"
-                      className="choose-file-btn"
-                      disabled={loading}
+                      className="choose-csv-button"
                       onClick={() =>
-                        item.ref.current?.click()
+                        fileInputs[
+                          item.key
+                        ].current?.click()
                       }
                     >
                       {selectedFile
-                        ? 'Change'
+                        ? 'Change CSV'
                         : 'Choose CSV'}
                     </button>
+
 
                     {selectedFile && (
                       <button
                         type="button"
-                        className="remove-file-btn"
-                        disabled={loading}
+                        className="remove-csv-button"
                         onClick={() =>
-                          handleRemoveFile(item.key)
+                          removeFile(
+                            item.key
+                          )
                         }
                       >
                         Remove
                       </button>
                     )}
+
                   </div>
+
                 </div>
-              );
-            })}
-          </div>
 
-          <div className="upload-progress-info">
-            <span>
-              {selectedFileCount} of 4 files selected
-            </span>
+              </article>
+            );
+          })}
 
-            {allFilesSelected && (
-              <span className="upload-ready">
-                ✓ All files ready
-              </span>
-            )}
-          </div>
-        </section>
-
-        {createdCase && (
-          <section className="case-created-card">
-            <div className="case-created-icon">
-              ✓
-            </div>
-
-            <div>
-              <p className="case-created-label">
-                INVESTIGATION CREATED
-              </p>
-
-              <h3>{createdCase.name}</h3>
-
-              <p>
-                Case ID:{' '}
-                <strong>{createdCase.caseId}</strong>
-              </p>
-
-              <p>
-                Status:{' '}
-                <strong>{createdCase.status}</strong>
-              </p>
-            </div>
-          </section>
-        )}
-
-        <div className="form-actions">
-          <button
-            type="button"
-            className="cancel-button"
-            onClick={onBack}
-            disabled={loading}
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            className="create-button"
-            disabled={
-              !allFilesSelected ||
-              !caseName.trim() ||
-              loading
-            }
-          >
-            {loading
-              ? 'Creating Investigation...'
-              : 'Create Investigation →'}
-          </button>
         </div>
-      </form>
-    </div>
+
+
+        {/* =================================================
+            UPLOAD STATUS
+        ================================================= */}
+
+        <div className="upload-status-row">
+
+          <span>
+            {uploadedCount} of 4 datasets uploaded
+          </span>
+
+          {uploadedCount === 4 && (
+            <strong>
+              ✓ All datasets ready
+            </strong>
+          )}
+
+        </div>
+
+      </section>
+
+
+      {/* =================================================
+          MESSAGES
+      ================================================= */}
+
+      {error && (
+        <div
+          className="investigation-message error"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div
+          className="investigation-message success"
+          role="status"
+        >
+          {success}
+        </div>
+      )}
+
+
+      {/* =================================================
+          FOOTER ACTIONS
+      ================================================= */}
+
+      <footer className="investigation-footer">
+
+        <button
+          type="button"
+          className="footer-back-button"
+          onClick={onBack}
+        >
+          ← Back
+        </button>
+
+        <button
+          type="button"
+          className="review-investigation-button"
+          onClick={handleReview}
+          disabled={
+            creating ||
+            uploadedCount !== 4
+          }
+        >
+          {creating
+            ? 'Creating Investigation...'
+            : 'Review Investigation →'}
+        </button>
+
+      </footer>
+
+    </main>
   );
 }
 

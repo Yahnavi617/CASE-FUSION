@@ -9,6 +9,7 @@ function NetworkGraph({ caseId, selectedLead }) {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedEntity, setSelectedEntity] = useState(null);
 
   useEffect(() => {
     loadNetwork();
@@ -20,9 +21,6 @@ function NetworkGraph({ caseId, selectedLead }) {
       setError('');
 
       const data = await getCaseNetwork(caseId);
-
-      console.log("NETWORK NODES:", data.nodes);
-      console.log("NETWORK EDGES:", data.edges);
 
       setNetwork({
         nodes: data.nodes || [],
@@ -98,182 +96,46 @@ function NetworkGraph({ caseId, selectedLead }) {
       }
     });
 
-    /*
-     * Keep existing connected entities first.
-     * Then include remaining entities from the API
-     * so the complete network is visible.
-     */
-    network.nodes.forEach((node) => {
-      if (node.id === centerNode.id) {
-        return;
-      }
-
-      if (!entityMap.has(node.id)) {
-        entityMap.set(node.id, {
-          node,
-          types: [],
-        });
-      }
-    });
-
     return Array.from(entityMap.values());
-  }, [
-    centerNode,
-    network.nodes,
-    network.edges,
-  ]);
+  }, [centerNode, network.nodes, network.edges]);
 
-  /*
-   * =====================================================
-   * CLEAN NETWORK POSITIONS
-   * =====================================================
-   *
-   * Center:
-   *             50 / 50
-   *
-   * 3 entities:
-   *
-   *             TOP
-   *
-   * LEFT      CENTER      RIGHT
-   *
-   * This keeps the graph clean and prevents overlapping.
-   */
-
-  function getPositions(count) {
-    if (count === 0) {
+  const centerConnections = useMemo(() => {
+    if (!centerNode) {
       return [];
     }
 
-    if (count === 1) {
-      return [
-        {
-          x: 50,
-          y: 50,
-        },
-      ];
+    return network.edges
+      .filter(
+        (edge) =>
+          edge.source === centerNode.id ||
+          edge.target === centerNode.id
+      )
+      .map((edge) => {
+        const connectedId =
+          edge.source === centerNode.id
+            ? edge.target
+            : edge.source;
+
+        const node = network.nodes.find(
+          (item) => item.id === connectedId
+        );
+
+        return {
+          edge,
+          node,
+        };
+      })
+      .filter((item) => item.node);
+  }, [centerNode, network.edges, network.nodes]);
+
+  useEffect(() => {
+    if (!centerNode) {
+      setSelectedEntity(null);
+      return;
     }
 
-    if (count === 2) {
-      return [
-        {
-          x: 20,
-          y: 50,
-        },
-        {
-          x: 80,
-          y: 50,
-        },
-      ];
-    }
-
-    /*
-     * NEW VISUAL POSITIONING
-     *
-     * For the current 3-entity case:
-     *
-     * LEFT ENTITY
-     *      \
-     *       CENTER
-     *      /
-     * RIGHT ENTITY
-     *
-     * This matches the clean reference layout.
-     */
-    if (count === 3) {
-      return [
-        {
-          x: 20,
-          y: 50,
-        },
-        {
-          x: 80,
-          y: 50,
-        },
-        {
-          x: 50,
-          y: 82,
-        },
-      ];
-    }
-
-    if (count === 4) {
-      return [
-        {
-          x: 18,
-          y: 35,
-        },
-        {
-          x: 82,
-          y: 35,
-        },
-        {
-          x: 82,
-          y: 68,
-        },
-        {
-          x: 18,
-          y: 68,
-        },
-      ];
-    }
-
-    if (count === 5) {
-      return [
-        {
-          x: 18,
-          y: 30,
-        },
-        {
-          x: 82,
-          y: 30,
-        },
-        {
-          x: 84,
-          y: 70,
-        },
-        {
-          x: 50,
-          y: 86,
-        },
-        {
-          x: 16,
-          y: 70,
-        },
-      ];
-    }
-
-    return [
-      {
-        x: 50,
-        y: 14,
-      },
-      {
-        x: 84,
-        y: 30,
-      },
-      {
-        x: 84,
-        y: 70,
-      },
-      {
-        x: 50,
-        y: 88,
-      },
-      {
-        x: 16,
-        y: 70,
-      },
-      {
-        x: 16,
-        y: 30,
-      },
-    ];
-  }
-
-  const positions = getPositions(
-    connectedEntities.length
-  );
+    setSelectedEntity(centerNode);
+  }, [centerNode]);
 
   function getConnectionClass(type) {
     if (type === 'financial') {
@@ -304,38 +166,157 @@ function NetworkGraph({ caseId, selectedLead }) {
       return 'Shared Device';
     }
 
-    return type;
+    return type || 'Relationship';
   }
 
-  /*
-   * Get midpoint of a connection.
-   * Used for the small relationship marker.
-   */
+  function getNodeType(node) {
+    const type =
+      node?.type ||
+      node?.entityType ||
+      node?.category ||
+      'person';
 
-  function getMidpoint(position) {
-    return {
-      x: (50 + position.x) / 2,
-      y: (50 + position.y) / 2,
-    };
+    return String(type).toLowerCase();
   }
+
+  function getNodeIcon(node) {
+    const type = getNodeType(node);
+
+    if (
+      type.includes('device') ||
+      type.includes('phone')
+    ) {
+      return '▣';
+    }
+
+    if (
+      type.includes('account') ||
+      type.includes('bank')
+    ) {
+      return '¤';
+    }
+
+    if (
+      type.includes('company') ||
+      type.includes('organization')
+    ) {
+      return '▤';
+    }
+
+    return '♙';
+  }
+
+  function getEntityStatus(node) {
+    return (
+      node?.status ||
+      node?.state ||
+      'Under Surveillance'
+    );
+  }
+
+  function getEntityLocation(node) {
+    return (
+      node?.location ||
+      node?.address ||
+      'Sector 4, NW'
+    );
+  }
+
+  function getEntityLastActive(node) {
+    return (
+      node?.lastActive ||
+      node?.last_active ||
+      node?.lastSeen ||
+      '2023-10-27 14:32Z'
+    );
+  }
+
+  function getPositions(count) {
+    if (count === 0) {
+      return [];
+    }
+
+    if (count === 1) {
+      return [
+        {
+          x: 50,
+          y: 18,
+        },
+      ];
+    }
+
+    if (count === 2) {
+      return [
+        {
+          x: 24,
+          y: 35,
+        },
+        {
+          x: 76,
+          y: 35,
+        },
+      ];
+    }
+
+    if (count === 3) {
+      return [
+        {
+          x: 24,
+          y: 42,
+        },
+        {
+          x: 76,
+          y: 42,
+        },
+        {
+          x: 76,
+          y: 72,
+        },
+      ];
+    }
+
+    if (count === 4) {
+      return [
+        {
+          x: 20,
+          y: 30,
+        },
+        {
+          x: 80,
+          y: 30,
+        },
+        {
+          x: 80,
+          y: 70,
+        },
+        {
+          x: 20,
+          y: 70,
+        },
+      ];
+    }
+
+    return connectedEntities.map((_, index) => {
+      const angle =
+        (Math.PI * 2 * index) /
+        Math.max(count, 1);
+
+      return {
+        x: 50 + Math.cos(angle) * 34,
+        y: 50 + Math.sin(angle) * 34,
+      };
+    });
+  }
+
+  const positions = getPositions(
+    connectedEntities.length
+  );
 
   if (loading) {
     return (
-      <div className="network-graph">
-        <div className="network-title">
-          <div>
-            <p className="section-label">
-              NETWORK
-            </p>
-
-            <h3>
-              Entity Network
-            </h3>
-          </div>
-        </div>
-
-        <div className="network-state">
-          Loading network...
+      <div className="network-page">
+        <div className="network-loading">
+          Loading entity network...
         </div>
       </div>
     );
@@ -343,159 +324,159 @@ function NetworkGraph({ caseId, selectedLead }) {
 
   if (error) {
     return (
-      <div className="network-graph">
-        <div className="network-title">
-          <div>
-            <p className="section-label">
-              NETWORK
-            </p>
-
-            <h3>
-              Entity Network
-            </h3>
-          </div>
-        </div>
-
-        <div className="network-state network-error">
-          {error}
+      <div className="network-page">
+        <div className="network-error-state">
+          <h2>Unable to load network</h2>
+          <p>{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="network-graph">
+    <div className="network-page">
 
-      {/* =================================================
-          HEADER
-      ================================================= */}
+      {/* PAGE HEADER */}
 
-      <div className="network-title">
+      <div className="network-page-header">
+
         <div>
-          <p className="section-label">
+          <p className="network-eyebrow">
             NETWORK INTELLIGENCE
           </p>
 
-          <h3>
+          <h2>
             Entity Relationship Network
-          </h3>
+          </h2>
 
-          <p className="network-subtitle">
+          <p>
             Financial, communication and shared-device
             relationships detected in this case.
           </p>
         </div>
 
-        <div className="network-counts">
+        <div className="network-legend-top">
+
           <span>
-            {connectedEntities.length +
-              (centerNode ? 1 : 0)}{' '}
-            entities
+            <i className="legend-dot financial" />
+            Financial
           </span>
 
           <span>
-            {network.edges.length} connections
+            <i className="legend-dot communication" />
+            Communication
           </span>
+
+          <span>
+            <i className="legend-dot device" />
+            Shared Device
+          </span>
+
         </div>
+
       </div>
 
-      {/* =================================================
-          GRAPH
-      ================================================= */}
+      <div className="network-layout">
 
-      <div className="real-network">
+        {/* GRAPH */}
 
-        {centerNode ? (
-          <>
+        <div className="network-canvas">
 
-            {/* =================================================
-                CONNECTION LINES + RELATIONSHIP MARKERS
-            ================================================= */}
+          <div className="network-controls">
 
-            <svg
-              className="network-svg"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden="true"
+            <button type="button">
+              +
+            </button>
+
+            <button type="button">
+              −
+            </button>
+
+            <button type="button">
+              ⛶
+            </button>
+
+            <button
+              type="button"
+              onClick={loadNetwork}
             >
+              ↻
+            </button>
 
-              {connectedEntities.map(
-                ({ node, types }, index) => {
-                  const position =
-                    positions[index];
+          </div>
 
-                  if (!position) {
-                    return null;
-                  }
+          {centerNode ? (
+            <>
 
-                  const primaryType =
-                    types[0] || 'default';
+              <svg
+                className="network-svg"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+              >
 
-                  const connectionClass =
-                    getConnectionClass(
-                      primaryType
+                {connectedEntities.map(
+                  ({ node, types }, index) => {
+                    const position =
+                      positions[index];
+
+                    if (!position) {
+                      return null;
+                    }
+
+                    const type =
+                      types[0] || 'default';
+
+                    const midpointX =
+                      (50 + position.x) / 2;
+
+                    const midpointY =
+                      (50 + position.y) / 2;
+
+                    return (
+                      <g
+                        key={`${node.id}-edge`}
+                      >
+
+                        <line
+                          x1="50"
+                          y1="50"
+                          x2={position.x}
+                          y2={position.y}
+                          className={`network-line ${getConnectionClass(
+                            type
+                          )}`}
+                        />
+
+                        <circle
+                          cx={midpointX}
+                          cy={midpointY}
+                          r="1.7"
+                          className={`network-line-marker ${getConnectionClass(
+                            type
+                          )}`}
+                        />
+
+                      </g>
                     );
+                  }
+                )}
 
-                  const midpoint =
-                    getMidpoint(position);
+              </svg>
 
-                  return (
-                    <g
-                      key={`${node.id}-connection`}
-                    >
+              {/* CENTER NODE */}
 
-                      {/* MAIN CONNECTION */}
-
-                      <line
-                        x1="50"
-                        y1="50"
-                        x2={position.x}
-                        y2={position.y}
-                        className={`network-edge-svg edge-${connectionClass}`}
-                      />
-
-                      {/* SMALL CONNECTION MARKER */}
-
-                      <circle
-                        cx={midpoint.x}
-                        cy={midpoint.y}
-                        r="2.1"
-                        className={`network-edge-marker marker-${connectionClass}`}
-                      />
-
-                      {/* INNER MARKER */}
-
-                      <circle
-                        cx={midpoint.x}
-                        cy={midpoint.y}
-                        r="0.7"
-                        className="network-edge-marker-inner"
-                      />
-
-                    </g>
-                  );
+              <button
+                type="button"
+                className="network-center-node"
+                onClick={() =>
+                  setSelectedEntity(
+                    centerNode
+                  )
                 }
-              )}
+              >
 
-            </svg>
-
-            {/* =================================================
-                CENTER / PRIMARY ENTITY
-            ================================================= */}
-
-            <div
-              className="graph-center"
-              style={{
-                left: '50%',
-                top: '50%',
-                transform:
-                  'translate(-50%, -50%)',
-              }}
-            >
-              <div className="graph-node-main">
-
-                <div className="graph-node-kicker">
-                  PRIMARY ENTITY
+                <div className="network-node-icon">
+                  {getNodeIcon(centerNode)}
                 </div>
 
                 <strong>
@@ -506,38 +487,45 @@ function NetworkGraph({ caseId, selectedLead }) {
                   {centerNode.id}
                 </span>
 
-              </div>
-            </div>
+              </button>
 
-            {/* =================================================
-                CONNECTED ENTITIES
-            ================================================= */}
+              {/* OTHER NODES */}
 
-            {connectedEntities.map(
-              ({ node, types }, index) => {
-                const position =
-                  positions[index];
+              {connectedEntities.map(
+                ({ node, types }, index) => {
+                  const position =
+                    positions[index];
 
-                if (!position) {
-                  return null;
-                }
+                  if (!position) {
+                    return null;
+                  }
 
-                return (
-                  <div
-                    key={node.id}
-                    className="graph-entity-position"
-                    style={{
-                      left: `${position.x}%`,
-                      top: `${position.y}%`,
-                      transform:
-                        'translate(-50%, -50%)',
-                    }}
-                  >
+                  const isSelected =
+                    selectedEntity?.id ===
+                    node.id;
 
-                    <div className="graph-node">
+                  return (
+                    <button
+                      type="button"
+                      key={node.id}
+                      className={`network-entity-node ${
+                        isSelected
+                          ? 'selected'
+                          : ''
+                      }`}
+                      style={{
+                        left: `${position.x}%`,
+                        top: `${position.y}%`,
+                      }}
+                      onClick={() =>
+                        setSelectedEntity(
+                          node
+                        )
+                      }
+                    >
 
-                      <div className="graph-node-type">
-                        ENTITY
+                      <div className="network-node-icon">
+                        {getNodeIcon(node)}
                       </div>
 
                       <strong>
@@ -548,62 +536,152 @@ function NetworkGraph({ caseId, selectedLead }) {
                         {node.id}
                       </span>
 
-                      <div className="relationship-tags">
+                    </button>
+                  );
+                }
+              )}
 
-                        {types.map((type) => (
-                          <span
-                            key={type}
-                            className={`relationship-tag tag-${getConnectionClass(
-                              type
-                            )}`}
-                          >
-                            {getRelationshipLabel(
-                              type
-                            )}
-                          </span>
-                        ))}
+            </>
+          ) : (
+            <div className="network-empty">
+              No entities available.
+            </div>
+          )}
 
-                      </div>
+        </div>
 
-                    </div>
+        {/* ENTITY DETAILS */}
 
-                  </div>
-                );
-              }
-            )}
+        <aside className="network-details">
 
-          </>
-        ) : (
-          <div className="network-state">
-            No entities available.
+          <div className="network-details-heading">
+            ENTITY DETAILS
           </div>
-        )}
 
-      </div>
+          {selectedEntity ? (
+            <>
 
-      {/* =================================================
-          LEGEND
-      ================================================= */}
+              <div className="network-entity-header">
 
-      <div className="network-legend">
+                <div className="network-detail-avatar">
+                  {getNodeIcon(
+                    selectedEntity
+                  )}
+                </div>
 
-        <div>
-          <span className="legend-dot financial" />
-          Financial
-        </div>
+                <div>
 
-        <div>
-          <span className="legend-dot communication" />
-          Communication
-        </div>
+                  <h3>
+                    {selectedEntity.label}
+                  </h3>
 
-        <div>
-          <span className="legend-dot device" />
-          Shared Device
-        </div>
+                  <span className="network-entity-id">
+                    ID: {selectedEntity.id}
+                  </span>
 
-        <span className="network-hint">
-        </span>
+                </div>
+
+                <span className="network-risk-dot" />
+
+              </div>
+
+              <div className="network-property-table">
+
+                <div className="network-property-row">
+                  <span>Property</span>
+                  <span>Value</span>
+                </div>
+
+                <div className="network-property-row">
+                  <span>Status</span>
+
+                  <strong className="network-status-value">
+                    {getEntityStatus(
+                      selectedEntity
+                    )}
+                  </strong>
+                </div>
+
+                <div className="network-property-row">
+                  <span>Last Active</span>
+
+                  <strong>
+                    {getEntityLastActive(
+                      selectedEntity
+                    )}
+                  </strong>
+                </div>
+
+                <div className="network-property-row">
+                  <span>Location</span>
+
+                  <strong>
+                    {getEntityLocation(
+                      selectedEntity
+                    )}
+                  </strong>
+                </div>
+
+              </div>
+
+              <div className="network-connections-title">
+                DIRECT CONNECTIONS (
+                {centerConnections.length}
+                )
+              </div>
+
+              <div className="network-connections">
+
+                {centerConnections.length > 0 ? (
+                  centerConnections.map(
+                    ({
+                      edge,
+                      node,
+                    }) => (
+                      <button
+                        type="button"
+                        className="network-connection-card"
+                        key={`${edge.source}-${edge.target}`}
+                        onClick={() =>
+                          setSelectedEntity(
+                            node
+                          )
+                        }
+                      >
+
+                        <strong>
+                          {node.label}
+                        </strong>
+
+                        <span>
+                          {getRelationshipLabel(
+                            edge.type
+                          )}
+                        </span>
+
+                        <b>
+                          ›
+                        </b>
+
+                      </button>
+                    )
+                  )
+                ) : (
+                  <div className="network-no-connections">
+                    No direct connections found.
+                  </div>
+                )}
+
+              </div>
+
+            </>
+          ) : (
+            <div className="network-no-selection">
+              Select an entity to view details.
+            </div>
+          )}
+
+        </aside>
 
       </div>
 

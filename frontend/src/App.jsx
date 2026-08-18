@@ -2,6 +2,7 @@ import './App.css';
 import { useEffect, useState } from 'react';
 
 import Dashboard from './pages/Dashboard';
+import Investigations from './pages/Investigations';
 import NewInvestigation from './pages/NewInvestigation';
 import CaseWorkspace from './pages/CaseWorkspace';
 import Login from './pages/Login';
@@ -92,21 +93,68 @@ function App() {
     setSelectedCaseId(null);
   }
 
+  function handleOpenInvestigations() {
+    setPage('investigations');
+
+    setSelectedCaseId(null);
+  }
+
   function handleBackToDashboard() {
     setPage('dashboard');
 
     setSelectedCaseId(null);
   }
 
-  function handleOpenCase(caseId) {
-    if (!caseId) {
-      return;
-    }
-
-    setSelectedCaseId(caseId);
-
-    setPage('case');
+  function handleOpenCase(caseData) {
+  if (!caseData) {
+    console.error('Cannot open case: no case data received.');
+    return;
   }
+
+  let actualCaseId = caseData;
+
+  // If a complete case object was passed accidentally,
+  // extract the actual case ID from it.
+  if (typeof caseData === 'object') {
+    actualCaseId =
+      caseData.caseId ||
+      caseData.id ||
+      caseData._id ||
+      caseData.case?.caseId ||
+      caseData.case?.id ||
+      caseData.case?._id ||
+      null;
+  }
+
+  // Convert ObjectId-like values to strings if necessary.
+  if (
+    actualCaseId &&
+    typeof actualCaseId === 'object'
+  ) {
+    actualCaseId =
+      actualCaseId.$oid ||
+      actualCaseId.toString?.() ||
+      null;
+  }
+
+  if (!actualCaseId) {
+    console.error(
+      'Cannot open case: valid case ID not found.',
+      caseData
+    );
+    return;
+  }
+
+  actualCaseId = String(actualCaseId);
+
+  console.log(
+    'Opening case with ID:',
+    actualCaseId
+  );
+
+  setSelectedCaseId(actualCaseId);
+  setPage('case');
+}
 
   function handleCaseCreated(newCase) {
     if (newCase?.caseId) {
@@ -204,8 +252,23 @@ function App() {
       </header>
 
       <main className="global-main">
+
         {page === 'dashboard' && (
           <Dashboard
+  onNewInvestigation={handleNewInvestigation}
+  onOpenInvestigations={() => {
+    setPage('investigations');
+    setSelectedCaseId(null);
+  }}
+  onOpenCase={handleOpenCase}
+/>
+        )}
+
+        {page === 'investigations' && (
+          <Investigations
+            onBack={
+              handleBackToDashboard
+            }
             onNewInvestigation={
               handleNewInvestigation
             }
@@ -235,6 +298,7 @@ function App() {
               }
             />
           )}
+
       </main>
     </div>
   );

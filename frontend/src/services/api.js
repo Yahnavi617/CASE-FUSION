@@ -140,3 +140,54 @@ export async function getCaseNetwork(caseId) {
 
   return data;
 }
+export async function getEvidence() {
+  const response = await fetch(
+    'http://localhost:5000/api/evidence'
+  );
+
+  if (!response.ok) {
+    const data =
+      await response.json().catch(
+        () => ({})
+      );
+
+    throw new Error(
+      data.message ||
+      'Failed to fetch evidence.'
+    );
+  }
+
+  return response.json();
+}
+
+
+export async function verifyEvidence(
+  evidenceId
+) {
+  const response = await fetch(
+    `http://localhost:5000/api/evidence/${encodeURIComponent(
+      evidenceId
+    )}/verify`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type':
+          'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const data =
+      await response.json().catch(
+        () => ({})
+      );
+
+    throw new Error(
+      data.message ||
+      'Failed to verify evidence.'
+    );
+  }
+
+  return response.json();
+}

@@ -2,6 +2,7 @@
 
 
 import { useEffect, useMemo, useState } from 'react';
+import './InvestigationIntel.css';
 
 const SAMPLE_EVIDENCE = [
     {
@@ -341,8 +342,11 @@ function SectionHeader({ eyebrow, title, description, right }) {
     );
 }
 
-export default function InvestigationIntel({ caseId = 'CASE-20260817-1485' }) {
-    const [activeTab, setActiveTab] = useState('overview');
+export default function InvestigationIntel({
+    caseId = 'CASE-20260817-1485',
+    defaultTab = 'overview',
+}) {
+    const [activeTab, setActiveTab] = useState(defaultTab);
     const [selectedEvidence, setSelectedEvidence] = useState(null);
     const [selectedConnection, setSelectedConnection] = useState(null);
     const [search, setSearch] = useState('');

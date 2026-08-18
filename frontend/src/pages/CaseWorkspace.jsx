@@ -1,15 +1,37 @@
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import NetworkGraph from '../components/NetworkGraph';
 import LeadExplanation from '../components/LeadExplanation';
 import InvestigationIntel from '../components/InvestigationIntel';
-import { getCase, getLeads, analyzeCase, } from '../services/api';
 
-function CaseWorkspace({ caseId, onBack }) {
-  const [caseInfo, setCaseInfo] = useState(null);
-  const [leads, setLeads] = useState([]);
+import {
+  getCase,
+  getLeads,
+  analyzeCase,
+} from '../services/api';
 
-  const [loading, setLoading] = useState(true);
-  const [analyzing, setAnalyzing] = useState(false);
+import './CaseWorkspace.css';
+
+
+function CaseWorkspace({
+  caseId,
+  onBack,
+}) {
+  const [caseInfo, setCaseInfo] =
+    useState(null);
+
+  const [leads, setLeads] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [analyzing, setAnalyzing] =
+    useState(false);
 
   const [selectedLead, setSelectedLead] =
     useState(null);
@@ -17,7 +39,8 @@ function CaseWorkspace({ caseId, onBack }) {
   const [networkLead, setNetworkLead] =
     useState(null);
 
-  const [error, setError] = useState('');
+  const [error, setError] =
+    useState('');
 
   const [riskFilter, setRiskFilter] =
     useState('all');
@@ -25,9 +48,24 @@ function CaseWorkspace({ caseId, onBack }) {
   const [scoreSort, setScoreSort] =
     useState('high-to-low');
 
+  const [activeTab, setActiveTab] =
+    useState('overview');
+
+
+  /* =====================================================
+     LOAD CASE
+  ===================================================== */
+
   useEffect(() => {
+    if (!caseId) {
+      setError('Case ID is missing.');
+      setLoading(false);
+      return;
+    }
+
     loadCase();
   }, [caseId]);
+
 
   async function loadCase() {
     try {
@@ -37,17 +75,31 @@ function CaseWorkspace({ caseId, onBack }) {
       const caseResponse =
         await getCase(caseId);
 
-      setCaseInfo(caseResponse.case);
+      const loadedCase =
+        caseResponse?.case;
+
+      if (!loadedCase) {
+        throw new Error(
+          'Case information was not returned.'
+        );
+      }
+
+      setCaseInfo(loadedCase);
 
       if (
-        caseResponse.case.status ===
-        'analyzed'
+        String(
+          loadedCase.status || ''
+        ).toLowerCase() === 'analyzed'
       ) {
         const leadsResponse =
           await getLeads(caseId);
 
         const loadedLeads =
-          leadsResponse.leads || [];
+          Array.isArray(
+            leadsResponse?.leads
+          )
+            ? leadsResponse.leads
+            : [];
 
         setLeads(loadedLeads);
 
@@ -65,7 +117,7 @@ function CaseWorkspace({ caseId, onBack }) {
       );
 
       setError(
-        err.message ||
+        err?.message ||
         'Failed to load investigation.'
       );
     } finally {
@@ -73,7 +125,16 @@ function CaseWorkspace({ caseId, onBack }) {
     }
   }
 
+
+  /* =====================================================
+     ANALYZE
+  ===================================================== */
+
   async function handleAnalyze() {
+    if (analyzing) {
+      return;
+    }
+
     try {
       setAnalyzing(true);
       setError('');
@@ -82,7 +143,11 @@ function CaseWorkspace({ caseId, onBack }) {
         await analyzeCase(caseId);
 
       const analyzedLeads =
-        response.leads || [];
+        Array.isArray(
+          response?.leads
+        )
+          ? response.leads
+          : [];
 
       setLeads(analyzedLeads);
 
@@ -90,13 +155,22 @@ function CaseWorkspace({ caseId, onBack }) {
         analyzedLeads[0] || null
       );
 
-      setCaseInfo((previous) => ({
-        ...previous,
-        status: 'analyzed',
-        analyzedAt:
-          new Date().toISOString(),
-        leadCount: response.count,
-      }));
+      setCaseInfo(
+        (previous) => ({
+          ...(previous || {}),
+
+          status: 'analyzed',
+
+          analyzedAt:
+            new Date().toISOString(),
+
+          leadCount:
+            response?.count ??
+            analyzedLeads.length,
+        })
+      );
+
+      setActiveTab('leads');
     } catch (err) {
       console.error(
         'Analysis failed:',
@@ -104,13 +178,18 @@ function CaseWorkspace({ caseId, onBack }) {
       );
 
       setError(
-        err.message ||
+        err?.message ||
         'Failed to analyze case.'
       );
     } finally {
       setAnalyzing(false);
     }
   }
+
+
+  /* =====================================================
+     LEAD ACTIONS
+  ===================================================== */
 
   function handleViewWhy(lead) {
     setSelectedLead(lead);
@@ -124,118 +203,157 @@ function CaseWorkspace({ caseId, onBack }) {
     setNetworkLead(lead);
   }
 
+
   /* =====================================================
-     DERIVED CASE INTELLIGENCE
-     ===================================================== */
+     RISK SUMMARY
+  ===================================================== */
 
-  const riskSummary = useMemo(() => {
-    const summary = {
-      high: 0,
-      medium: 0,
-      low: 0,
-    };
+  const riskSummary =
+    useMemo(() => {
+      const summary = {
+        high: 0,
+        medium: 0,
+        low: 0,
+      };
 
-    leads.forEach((lead) => {
-      const score =
-        Number(lead.score) || 0;
+      leads.forEach(
+        (lead) => {
+          const score =
+            Number(lead?.score) || 0;
 
-      if (score >= 80) {
-        summary.high += 1;
-      } else if (score >= 50) {
-        summary.medium += 1;
-      } else {
-        summary.low += 1;
-      }
-    });
-
-    return summary;
-  }, [leads]);
-
-  const averageScore = useMemo(() => {
-    if (!leads.length) {
-      return 0;
-    }
-
-    const total = leads.reduce(
-      (sum, lead) =>
-        sum +
-        (Number(lead.score) || 0),
-      0
-    );
-
-    return Math.round(
-      total / leads.length
-    );
-  }, [leads]);
-
-  const topLead = useMemo(() => {
-    if (!leads.length) {
-      return null;
-    }
-
-    return [...leads].sort(
-      (a, b) =>
-        (Number(b.score) || 0) -
-        (Number(a.score) || 0)
-    )[0];
-  }, [leads]);
-
-  const strongestSignal = useMemo(() => {
-    if (!leads.length) {
-      return '—';
-    }
-
-    const signalTotals = {
-      Financial: 0,
-      Communication: 0,
-      'Cross-source': 0,
-      Temporal: 0,
-      Centrality: 0,
-    };
-
-    leads.forEach((lead) => {
-      const signals =
-        lead.signals || {};
-
-      signalTotals.Financial +=
-        Number(
-          signals.financial || 0
-        );
-
-      signalTotals.Communication +=
-        Number(
-          signals.communication || 0
-        );
-
-      signalTotals[
-        'Cross-source'
-      ] += Number(
-        signals.crossSource || 0
+          if (score >= 80) {
+            summary.high += 1;
+          } else if (score >= 50) {
+            summary.medium += 1;
+          } else {
+            summary.low += 1;
+          }
+        }
       );
 
-      signalTotals.Temporal +=
-        Number(
-          signals.temporal || 0
-        );
+      return summary;
+    }, [leads]);
 
-      signalTotals.Centrality +=
-        Number(
-          signals.centrality || 0
-        );
-    });
-
-    return (
-      Object.entries(
-        signalTotals
-      ).sort(
-        (a, b) => b[1] - a[1]
-      )[0]?.[0] || '—'
-    );
-  }, [leads]);
 
   /* =====================================================
-     CSV EXPORT
-     ===================================================== */
+     FILTER + SORT
+  ===================================================== */
+
+  const displayedLeads =
+    useMemo(() => {
+      const filtered =
+        leads.filter(
+          (lead) => {
+            const score =
+              Number(lead?.score) || 0;
+
+            if (riskFilter === 'high') {
+              return score >= 80;
+            }
+
+            if (riskFilter === 'medium') {
+              return (
+                score >= 50 &&
+                score < 80
+              );
+            }
+
+            if (riskFilter === 'low') {
+              return score < 50;
+            }
+
+            return true;
+          }
+        );
+
+      return [...filtered].sort(
+        (a, b) => {
+          const scoreA =
+            Number(a?.score) || 0;
+
+          const scoreB =
+            Number(b?.score) || 0;
+
+          return scoreSort ===
+            'low-to-high'
+            ? scoreA - scoreB
+            : scoreB - scoreA;
+        }
+      );
+    }, [
+      leads,
+      riskFilter,
+      scoreSort,
+    ]);
+
+
+  const featuredLead =
+    displayedLeads[0] || null;
+
+  const secondaryLeads =
+    displayedLeads
+      .slice(1, 4);
+
+
+  /* =====================================================
+     HELPERS
+  ===================================================== */
+
+  function getRisk(score) {
+    const value =
+      Number(score) || 0;
+
+    if (value >= 80) {
+      return {
+        label: 'HIGH RISK',
+        className: 'high',
+      };
+    }
+
+    if (value >= 50) {
+      return {
+        label: 'MEDIUM RISK',
+        className: 'medium',
+      };
+    }
+
+    return {
+      label: 'LOW RISK',
+      className: 'low',
+    };
+  }
+
+
+  function getSignalValue(
+    signals,
+    key
+  ) {
+    return Math.round(
+      (
+        Number(
+          signals?.[key]
+        ) || 0
+      ) * 100
+    );
+  }
+
+
+  function getSignalClass(value) {
+    if (value >= 80) {
+      return 'danger';
+    }
+
+    if (value >= 50) {
+      return 'warning';
+    }
+
+    return 'safe';
+  }
+
+
+  /* =====================================================
+     EXPORT CSV
+  ===================================================== */
 
   function handleExportLeads() {
     if (!leads.length) {
@@ -255,91 +373,88 @@ function CaseWorkspace({ caseId, onBack }) {
       'Reasons',
     ];
 
-    const rows = leads.map((lead) => {
-      const score =
-        Number(lead.score) || 0;
+    const rows =
+      leads.map(
+        (lead) => {
+          const score =
+            Number(lead?.score) || 0;
 
-      const risk =
-        score >= 80
-          ? 'High'
-          : score >= 50
-            ? 'Medium'
-            : 'Low';
+          const risk =
+            score >= 80
+              ? 'High'
+              : score >= 50
+                ? 'Medium'
+                : 'Low';
 
-      const signals =
-        lead.signals || {};
+          const signals =
+            lead?.signals || {};
 
-      const reasons =
-        (lead.reasons || []).join(
-          ' | '
-        );
+          return [
+            lead?.id || '',
+            lead?.label || '',
+            score,
+            risk,
+            Math.round(
+              Number(
+                signals.financial
+              ) * 100
+            ) || 0,
+            Math.round(
+              Number(
+                signals.communication
+              ) * 100
+            ) || 0,
+            Math.round(
+              Number(
+                signals.crossSource
+              ) * 100
+            ) || 0,
+            Math.round(
+              Number(
+                signals.temporal
+              ) * 100
+            ) || 0,
+            Math.round(
+              Number(
+                signals.centrality
+              ) * 100
+            ) || 0,
+            (
+              lead?.reasons || []
+            ).join(' | '),
+          ];
+        }
+      );
 
-      return [
-        lead.id || '',
-        lead.label || '',
-        score,
-        risk,
-
-        Math.round(
-          Number(
-            signals.financial || 0
-          ) * 100
-        ),
-
-        Math.round(
-          Number(
-            signals.communication || 0
-          ) * 100
-        ),
-
-        Math.round(
-          Number(
-            signals.crossSource || 0
-          ) * 100
-        ),
-
-        Math.round(
-          Number(
-            signals.temporal || 0
-          ) * 100
-        ),
-
-        Math.round(
-          Number(
-            signals.centrality || 0
-          ) * 100
-        ),
-
-        reasons,
-      ];
-    });
+    const escapeCsv =
+      (value) =>
+        `"${String(
+          value ?? ''
+        ).replace(
+          /"/g,
+          '""'
+        )}"`;
 
     const csv = [
       headers,
       ...rows,
     ]
-      .map((row) =>
-        row
-          .map((value) => {
-            const text =
-              String(value).replace(
-                /"/g,
-                '""'
-              );
-
-            return `"${text}"`;
-          })
-          .join(',')
+      .map(
+        (row) =>
+          row
+            .map(escapeCsv)
+            .join(',')
       )
       .join('\n');
 
-    const blob = new Blob(
-      [csv],
-      {
-        type:
-          'text/csv;charset=utf-8;',
-      }
-    );
+    const blob =
+      new Blob(
+        [csv],
+        {
+          type:
+            'text/csv;charset=utf-8;',
+        }
+      );
 
     const url =
       URL.createObjectURL(blob);
@@ -350,8 +465,7 @@ function CaseWorkspace({ caseId, onBack }) {
     link.href = url;
 
     link.download =
-      `${caseInfo?.caseId || 'case'
-      }-leads.csv`;
+      `casefusion-${caseId}-leads.csv`;
 
     document.body.appendChild(link);
 
@@ -362,68 +476,17 @@ function CaseWorkspace({ caseId, onBack }) {
     URL.revokeObjectURL(url);
   }
 
-  /* =====================================================
-     FILTERED + SORTED LEADS
-     ===================================================== */
 
-  const displayedLeads =
-    useMemo(() => {
-      const filtered =
-        leads.filter((lead) => {
-          const score =
-            Number(lead.score) || 0;
+  const isAnalyzed =
+    String(
+      caseInfo?.status || ''
+    ).toLowerCase() ===
+    'analyzed';
 
-          if (
-            riskFilter === 'high'
-          ) {
-            return score >= 80;
-          }
-
-          if (
-            riskFilter === 'medium'
-          ) {
-            return (
-              score >= 50 &&
-              score < 80
-            );
-          }
-
-          if (
-            riskFilter === 'low'
-          ) {
-            return score < 50;
-          }
-
-          return true;
-        });
-
-      return [...filtered].sort(
-        (a, b) => {
-          const scoreA =
-            Number(a.score) || 0;
-
-          const scoreB =
-            Number(b.score) || 0;
-
-          if (
-            scoreSort ===
-            'low-to-high'
-          ) {
-            return scoreA - scoreB;
-          }
-
-          return scoreB - scoreA;
-        }
-      );
-    }, [
-      leads,
-      riskFilter,
-      scoreSort,
-    ]);
 
   /* =====================================================
      LOADING
-     ===================================================== */
+  ===================================================== */
 
   if (loading) {
     return (
@@ -435,19 +498,27 @@ function CaseWorkspace({ caseId, onBack }) {
     );
   }
 
+
   /* =====================================================
      ERROR
-     ===================================================== */
+  ===================================================== */
 
-  if (error && !caseInfo) {
+  if (
+    error &&
+    !caseInfo
+  ) {
     return (
       <div className="workspace-page">
+
         <div className="workspace-error">
+
           <h2>
             Unable to load investigation
           </h2>
 
-          <p>{error}</p>
+          <p>
+            {error}
+          </p>
 
           <button
             type="button"
@@ -456,417 +527,312 @@ function CaseWorkspace({ caseId, onBack }) {
           >
             ← Back to Investigations
           </button>
+
         </div>
+
       </div>
     );
   }
 
-  const isAnalyzed =
-    caseInfo?.status ===
-    'analyzed';
+
+  /* =====================================================
+     RENDER
+  ===================================================== */
 
   return (
     <div className="workspace-page">
 
-      {/* =================================================
-          HEADER
-          ================================================= */}
+      {/* HEADER */}
 
       <header className="workspace-header">
-        <div>
+
+        <div className="workspace-header-left">
+
           <button
             type="button"
-            className="back-button"
+            className="workspace-back-button"
             onClick={onBack}
           >
             ← All Investigations
           </button>
 
-          <p className="section-label">
-            CASE WORKSPACE
-          </p>
+          <div className="workspace-case-info">
 
-          <h1>
-            {caseInfo?.name}
-          </h1>
+            <span>
+              CASE
+            </span>
 
-          <div className="case-reference">
-            {caseInfo?.caseId}
+            <strong>
+              {caseInfo?.name ||
+                caseInfo?.caseName ||
+                'Untitled Investigation'}
+            </strong>
+
+            <small>
+              {caseInfo?.caseId ||
+                caseId}
+            </small>
+
           </div>
+
         </div>
 
-        <div className="workspace-actions">
-          <span
-            className={`workspace-status ${isAnalyzed
-                ? 'status-analyzed'
-                : 'status-uploaded'
-              }`}
-          >
-            {caseInfo?.status}
-          </span>
 
-          {!isAnalyzed && (
-            <button
-              type="button"
-              className="analyze-button"
-              onClick={handleAnalyze}
-              disabled={analyzing}
-            >
-              {analyzing
-                ? 'Analyzing...'
-                : 'Analyze Case →'}
-            </button>
+        <nav className="workspace-tabs">
+
+          {[
+            ['overview', 'Overview'],
+            ['evidence', 'Evidence'],
+            ['leads', 'Leads'],
+            ['network', 'Network'],
+            ['reports', 'Reports'],
+          ].map(
+            ([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={
+                  activeTab === id
+                    ? 'active'
+                    : ''
+                }
+                onClick={() =>
+                  setActiveTab(id)
+                }
+              >
+                {label}
+              </button>
+            )
           )}
-        </div>
+
+        </nav>
+
       </header>
 
-      {/* =================================================
-          ERROR MESSAGE
-          ================================================= */}
+
+      {/* ERROR */}
 
       {error && (
-        <div className="workspace-message">
+        <div className="workspace-inline-error">
           {error}
         </div>
       )}
 
-      {/* =================================================
-          CASE STATS
-          ================================================= */}
-
-      <section className="workspace-stats">
-
-        <div className="workspace-stat">
-          <span>
-            CASE STATUS
-          </span>
-
-          <strong>
-            {caseInfo?.status}
-          </strong>
-        </div>
-
-        <div className="workspace-stat">
-          <span>
-            PRIORITY LEADS
-          </span>
-
-          <strong>
-            {leads.length}
-          </strong>
-        </div>
-
-        <div className="workspace-stat">
-          <span>
-            CREATED
-          </span>
-
-          <strong>
-            {caseInfo?.createdAt
-              ? new Date(
-                caseInfo.createdAt
-              ).toLocaleDateString()
-              : '—'}
-          </strong>
-        </div>
-
-        <div className="workspace-stat">
-          <span>
-            ANALYZED
-          </span>
-
-          <strong>
-            {caseInfo?.analyzedAt
-              ? new Date(
-                caseInfo.analyzedAt
-              ).toLocaleDateString()
-              : '—'}
-          </strong>
-        </div>
-
-      </section>
 
       {/* =================================================
-          INTELLIGENCE SNAPSHOT
-          ================================================= */}
+          OVERVIEW
+      ================================================== */}
 
-      {isAnalyzed &&
-        leads.length > 0 && (
-          <section className="workspace-intelligence-strip">
+      {activeTab === 'overview' && (
+        <section className="workspace-overview">
 
-            <div className="workspace-intelligence-item">
+          <div className="priority-leads-heading">
+
+            <div>
+
+              <div className="priority-leads-eyebrow">
+                CASE INTELLIGENCE
+              </div>
+
+              <h1>
+                Investigation Dashboard
+              </h1>
+
+              <p>
+                Monitor evidence, relationships,
+                priority leads and intelligence
+                signals for this investigation.
+              </p>
+
+            </div>
+
+            {!isAnalyzed && (
+              <button
+                type="button"
+                className="priority-analyze-button"
+                onClick={handleAnalyze}
+                disabled={analyzing}
+              >
+                {analyzing
+                  ? 'Analyzing...'
+                  : 'Analyze Case →'}
+              </button>
+            )}
+
+          </div>
+
+
+          <div className="workspace-summary-grid">
+
+            <div className="workspace-summary-card">
+
+              <span>
+                CASE STATUS
+              </span>
+
+              <strong>
+                {caseInfo?.status ||
+                  'Pending'}
+              </strong>
+
+            </div>
+
+
+            <div className="workspace-summary-card">
+
+              <span>
+                TOTAL LEADS
+              </span>
+
+              <strong>
+                {leads.length}
+              </strong>
+
+            </div>
+
+
+            <div className="workspace-summary-card">
+
               <span>
                 HIGH RISK
               </span>
 
-              <strong className="intelligence-high">
+              <strong className="danger-text">
                 {riskSummary.high}
               </strong>
 
-              <small>
-                Score 80+
-              </small>
             </div>
 
-            <div className="workspace-intelligence-item">
+
+            <div className="workspace-summary-card">
+
               <span>
                 MEDIUM RISK
               </span>
 
-              <strong className="intelligence-medium">
+              <strong className="warning-text">
                 {riskSummary.medium}
               </strong>
 
-              <small>
-                Score 50–79
-              </small>
             </div>
 
-            <div className="workspace-intelligence-item">
-              <span>
-                AVERAGE SCORE
-              </span>
-
-              <strong>
-                {averageScore}
-              </strong>
-
-              <small>
-                Across all leads
-              </small>
-            </div>
-
-            <div className="workspace-intelligence-item">
-              <span>
-                STRONGEST SIGNAL
-              </span>
-
-              <strong>
-                {strongestSignal}
-              </strong>
-
-              <small>
-                Aggregate signal
-              </small>
-            </div>
-
-            <div className="workspace-intelligence-item">
-              <span>
-                TOP LEAD
-              </span>
-
-              <strong>
-                {topLead?.label ||
-                  '—'}
-              </strong>
-
-              <small>
-                Score{' '}
-                {Number(
-                  topLead?.score || 0
-                )}
-              </small>
-            </div>
-
-          </section>
-        )}
-
-      {/* =================================================
-          EVIDENCE SUMMARY
-          ================================================= */}
-
-      {isAnalyzed &&
-        leads.length > 0 && (
-          <section className="evidence-summary-section">
-
-            <div className="evidence-summary-heading">
-              <div>
-                <p className="section-label">
-                  CASE INTELLIGENCE
-                </p>
-
-                <h2>
-                  Evidence Summary
-                </h2>
-
-                <p>
-                  High-level signals derived
-                  from the analyzed priority
-                  leads.
-                </p>
-              </div>
-            </div>
-
-            <div className="evidence-summary-grid">
-
-              <div className="evidence-summary-card">
-                <span>
-                  TOTAL LEADS
-                </span>
-
-                <strong>
-                  {leads.length}
-                </strong>
-
-                <small>
-                  Entities identified
-                </small>
-              </div>
-
-              <div className="evidence-summary-card">
-                <span>
-                  HIGH RISK
-                </span>
-
-                <strong>
-                  {riskSummary.high}
-                </strong>
-
-                <small>
-                  Score 80 or above
-                </small>
-              </div>
-
-              <div className="evidence-summary-card">
-                <span>
-                  MEDIUM RISK
-                </span>
-
-                <strong>
-                  {riskSummary.medium}
-                </strong>
-
-                <small>
-                  Score 50–79
-                </small>
-              </div>
-
-              <div className="evidence-summary-card">
-                <span>
-                  AVERAGE SCORE
-                </span>
-
-                <strong>
-                  {averageScore}
-                </strong>
-
-                <small>
-                  Across all leads
-                </small>
-              </div>
-
-            </div>
-
-            <div className="evidence-signal-summary">
-
-              <div>
-                <span>
-                  STRONGEST SIGNAL
-                </span>
-
-                <strong>
-                  {strongestSignal}
-                </strong>
-              </div>
-
-              <div>
-                <span>
-                  TOP LEAD
-                </span>
-
-                <strong>
-                  {topLead?.label ||
-                    '—'}
-                </strong>
-              </div>
-
-              <div>
-                <span>
-                  TOP SCORE
-                </span>
-
-                <strong>
-                  {Number(
-                    topLead?.score || 0
-                  )}
-                </strong>
-              </div>
-
-            </div>
-
-          </section>
-        )}
-
-      {/* =================================================
-          NETWORK
-          ================================================= */}
-
-      {isAnalyzed &&
-        leads.length > 0 && (
-          <section className="main-network-section">
-
-            <div className="network-focus-bar">
-              <div className="network-focus-heading">
-                <span className="network-focus-label">
-                  NETWORK FOCUS
-                </span>
-
-                <strong className="network-focus-name">
-                  {networkLead?.label ||
-                    leads[0]?.label ||
-                    'Primary Entity'}
-                </strong>
-              </div>
-
-              <small className="network-focus-description">
-                Select a lead below to change the network focus.
-              </small>
-            </div>
-            <NetworkGraph
-              caseId={caseId}
-              selectedLead={
-                networkLead
-              }
-            />
-            <InvestigationIntel caseId={caseId} />
-
-          </section>
-        )}
-
-      {/* =================================================
-          PRIORITY LEADS
-          ================================================= */}
-
-      <section className="leads-section">
-
-        <div className="leads-heading">
-
-          <div>
-            <p className="section-label">
-              INTELLIGENCE
-            </p>
-
-            <h2>
-              Priority Leads
-            </h2>
-
-            <p>
-              Entities ranked by the
-              CaseFusion scoring engine.
-            </p>
           </div>
 
-          {isAnalyzed &&
-            leads.length > 0 && (
-              <div className="leads-heading-actions">
 
-                <span className="lead-count">
-                  {leads.length} leads
-                </span>
+          <div className="workspace-intel-card">
+
+            <div>
+
+              <div className="priority-leads-eyebrow">
+                DIGITAL EVIDENCE & CORRELATION
+              </div>
+
+              <h2>
+                Investigation Intelligence
+              </h2>
+
+              <p>
+                Unified analysis across telecom,
+                banking, social, device and
+                investigative evidence.
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setActiveTab('evidence')
+              }
+            >
+              Open Intelligence →
+            </button>
+
+          </div>
+
+
+          <InvestigationIntel
+            caseId={caseId}
+            defaultTab="overview"
+          />
+
+        </section>
+      )}
+
+
+      {/* =================================================
+          EVIDENCE
+      ================================================== */}
+
+      {activeTab === 'evidence' && (
+        <section className="workspace-module">
+
+          <InvestigationIntel
+            caseId={caseId}
+            defaultTab="evidence"
+          />
+
+        </section>
+      )}
+
+
+      {/* =================================================
+          LEADS
+      ================================================== */}
+
+      {activeTab === 'leads' && (
+        <section className="priority-leads-page">
+
+          <div className="priority-leads-heading">
+
+            <div>
+
+              <div className="priority-leads-eyebrow">
+                CASE INTELLIGENCE
+              </div>
+
+              <h1>
+                Priority Leads
+              </h1>
+
+              <p>
+                Entities ranked by the
+                CASEFUSION scoring engine.
+              </p>
+
+            </div>
+
+
+            {isAnalyzed && (
+              <div className="priority-leads-actions">
+
+                <div className="priority-stat">
+
+                  <strong>
+                    {leads.length}
+                  </strong>
+
+                  <span>
+                    Leads
+                  </span>
+
+                </div>
+
+                <div className="priority-stat priority-stat-danger">
+
+                  <strong>
+                    {riskSummary.high}
+                  </strong>
+
+                  <span>
+                    High Risk
+                  </span>
+
+                </div>
 
                 <button
                   type="button"
-                  className="export-leads-button"
+                  className="priority-export-button"
                   onClick={
                     handleExportLeads
                   }
@@ -877,140 +843,84 @@ function CaseWorkspace({ caseId, onBack }) {
               </div>
             )}
 
-        </div>
-
-        {/* =================================================
-            NOT ANALYZED
-            ================================================= */}
-
-        {!isAnalyzed && (
-          <div className="analysis-empty">
-
-            <div className="analysis-icon">
-              ⚡
-            </div>
-
-            <h3>
-              Analysis has not been run
-            </h3>
-
-            <p>
-              Run the scoring engine to
-              identify and rank suspicious
-              case entities.
-            </p>
-
-            <button
-              type="button"
-              className="analyze-button"
-              onClick={handleAnalyze}
-              disabled={analyzing}
-            >
-              {analyzing
-                ? 'Analyzing...'
-                : 'Analyze Case →'}
-            </button>
-
           </div>
-        )}
 
-        {/* =================================================
-            NO LEADS
-            ================================================= */}
 
-        {isAnalyzed &&
-          leads.length === 0 && (
-            <div className="analysis-empty">
+          {!isAnalyzed && (
+            <div className="priority-empty-state">
 
-              <div className="analysis-icon">
-                ✓
+              <div className="priority-empty-icon">
+                ⚡
               </div>
 
-              <h3>
-                No leads identified
-              </h3>
+              <h2>
+                Analysis has not been run
+              </h2>
 
               <p>
-                The analysis completed but
-                did not return any case entities.
+                Run the CASEFUSION scoring
+                engine to identify and rank
+                priority entities.
               </p>
+
+              <button
+                type="button"
+                className="priority-analyze-button"
+                onClick={handleAnalyze}
+                disabled={analyzing}
+              >
+                {analyzing
+                  ? 'Analyzing...'
+                  : 'Analyze Case →'}
+              </button>
 
             </div>
           )}
 
-        {/* =================================================
-            LEAD LIST
-            ================================================= */}
 
-        {isAnalyzed &&
-          leads.length > 0 && (
+          {isAnalyzed && (
             <>
 
-              <div className="lead-controls">
+              <div className="priority-lead-toolbar">
 
-                <div className="lead-risk-filters">
+                <div className="priority-risk-filters">
 
-                  <span className="lead-control-label">
+                  <span>
                     RISK
                   </span>
 
-                  <button
-                    type="button"
-                    className={`lead-filter-button ${riskFilter === 'all'
-                        ? 'active'
-                        : ''
-                      }`}
-                    onClick={() =>
-                      setRiskFilter('all')
-                    }
-                  >
-                    All
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`lead-filter-button ${riskFilter === 'high'
-                        ? 'active'
-                        : ''
-                      }`}
-                    onClick={() =>
-                      setRiskFilter('high')
-                    }
-                  >
-                    High Risk
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`lead-filter-button ${riskFilter === 'medium'
-                        ? 'active'
-                        : ''
-                      }`}
-                    onClick={() =>
-                      setRiskFilter('medium')
-                    }
-                  >
-                    Medium Risk
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`lead-filter-button ${riskFilter === 'low'
-                        ? 'active'
-                        : ''
-                      }`}
-                    onClick={() =>
-                      setRiskFilter('low')
-                    }
-                  >
-                    Low Risk
-                  </button>
+                  {[
+                    ['all', 'All'],
+                    ['high', 'High Risk'],
+                    ['medium', 'Medium Risk'],
+                    ['low', 'Low Risk'],
+                  ].map(
+                    ([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={
+                          riskFilter === value
+                            ? 'active'
+                            : ''
+                        }
+                        onClick={() =>
+                          setRiskFilter(
+                            value
+                          )
+                        }
+                      >
+                        {label}
+                      </button>
+                    )
+                  )}
 
                 </div>
 
-                <label className="lead-sort-control">
 
-                  <span className="lead-control-label">
+                <label className="priority-sort">
+
+                  <span>
                     SORT
                   </span>
 
@@ -1035,316 +945,350 @@ function CaseWorkspace({ caseId, onBack }) {
 
               </div>
 
-              <div className="lead-results-info">
-                Showing{' '}
-                <strong>
-                  {displayedLeads.length}
-                </strong>{' '}
-                of{' '}
-                <strong>
-                  {leads.length}
-                </strong>{' '}
-                leads
+
+              <div className="priority-results-info">
+
+                <span>
+                  Showing{' '}
+                  <strong>
+                    {displayedLeads.length}
+                  </strong>{' '}
+                  of{' '}
+                  <strong>
+                    {leads.length}
+                  </strong>{' '}
+                  leads
+                </span>
+
+                <span>
+                  {riskSummary.high}
+                  {' '}
+                  high risk
+                </span>
+
               </div>
 
-              {displayedLeads.length === 0 && (
-                <div className="analysis-empty">
 
-                  <div className="analysis-icon">
-                    —
-                  </div>
+              {displayedLeads.length === 0 ? (
 
-                  <h3>
-                    No leads match this filter
-                  </h3>
+                <div className="priority-filter-empty">
+
+                  <h2>
+                    No leads found
+                  </h2>
 
                   <p>
-                    Try selecting another
-                    risk level.
+                    Try another risk filter.
                   </p>
 
                   <button
                     type="button"
-                    className="analyze-button"
                     onClick={() =>
                       setRiskFilter('all')
                     }
                   >
-                    Show All Leads
+                    Show All
                   </button>
 
                 </div>
-              )}
 
-              {displayedLeads.length > 0 && (
-                <div className="leads-list">
+              ) : (
 
-                  {displayedLeads.map(
-                    (lead, index) => {
+                <div className="priority-lead-layout">
 
-                      const score =
-                        Number(
-                          lead.score
-                        ) || 0;
-
-                      const riskLevel =
-                        score >= 80
-                          ? 'HIGH RISK'
-                          : score >= 50
-                            ? 'MEDIUM RISK'
-                            : 'LOW RISK';
-
-                      const riskClass =
-                        score >= 80
-                          ? 'high'
-                          : score >= 50
-                            ? 'medium'
-                            : 'low';
-
-                      const signals =
-                        lead.signals ||
-                        {};
-
-                      const isNetworkSelected =
+                  {featuredLead && (
+                    <article
+                      className={`featured-lead-card risk-${
+                        getRisk(
+                          featuredLead.score
+                        ).className
+                      } ${
                         networkLead?.id ===
-                        lead.id;
+                        featuredLead.id
+                          ? 'network-selected'
+                          : ''
+                      }`}
+                      onClick={() =>
+                        handleNetworkSelect(
+                          featuredLead
+                        )
+                      }
+                    >
 
-                      return (
-                        <div
-                          className={`lead-card ${isNetworkSelected
-                              ? 'lead-card-selected'
-                              : ''
-                            }`}
-                          key={lead.id}
-                          onClick={() =>
-                            handleNetworkSelect(
-                              lead
-                            )
-                          }
-                          onKeyDown={(
-                            event
-                          ) => {
-                            if (
-                              event.key ===
-                              'Enter' ||
-                              event.key ===
-                              ' '
-                            ) {
-                              event.preventDefault();
+                      <div className="featured-lead-main">
 
-                              handleNetworkSelect(
-                                lead
-                              );
-                            }
-                          }}
-                          role="button"
-                          tabIndex={0}
-                        >
+                        <div className="featured-lead-header">
 
-                          <div className="lead-rank">
-                            #{index + 1}
+                          <div className="featured-lead-name-row">
+
+                            <h2>
+                              {featuredLead.label}
+                            </h2>
+
+                            <span
+                              className={`featured-risk-badge risk-${
+                                getRisk(
+                                  featuredLead.score
+                                ).className
+                              }`}
+                            >
+                              {getRisk(
+                                featuredLead.score
+                              ).label}
+                            </span>
+
                           </div>
 
-                          <div className="lead-main">
+                          <p className="featured-lead-subtitle">
+                            {featuredLead
+                              .reasons?.[0] ||
+                              'Priority entity identified by the scoring engine.'}
+                          </p>
 
-                            <div className="lead-top">
+                        </div>
+
+
+                        <div className="featured-reasons">
+
+                          {(
+                            featuredLead.reasons ||
+                            []
+                          )
+                            .slice(0, 4)
+                            .map(
+                              (
+                                reason,
+                                index
+                              ) => (
+                                <div
+                                  className="featured-reason"
+                                  key={index}
+                                >
+                                  <span>
+                                    ◉
+                                  </span>
+
+                                  <p>
+                                    {reason}
+                                  </p>
+                                </div>
+                              )
+                            )}
+
+                        </div>
+
+                      </div>
+
+
+                      <aside className="featured-score-panel">
+
+                        <div className="featured-score-heading">
+
+                          <span>
+                            THREAT SCORE
+                          </span>
+
+                          <strong>
+                            {Number(
+                              featuredLead.score
+                            ) || 0}
+                          </strong>
+
+                        </div>
+
+
+                        <div className="featured-signal-list">
+
+                          {[
+                            [
+                              'Financial',
+                              'financial',
+                            ],
+                            [
+                              'Communication',
+                              'communication',
+                            ],
+                            [
+                              'Cross-source',
+                              'crossSource',
+                            ],
+                            [
+                              'Temporal',
+                              'temporal',
+                            ],
+                            [
+                              'Centrality',
+                              'centrality',
+                            ],
+                          ].map(
+                            ([label, key]) => {
+
+                              const value =
+                                getSignalValue(
+                                  featuredLead.signals,
+                                  key
+                                );
+
+                              return (
+                                <div
+                                  className="featured-signal-row"
+                                  key={key}
+                                >
+
+                                  <span>
+                                    {label}
+                                  </span>
+
+                                  <div className="featured-signal-bar">
+
+                                    <div
+                                      className={`featured-signal-fill ${getSignalClass(
+                                        value
+                                      )}`}
+                                      style={{
+                                        width:
+                                          `${Math.min(
+                                            Math.max(
+                                              value,
+                                              0
+                                            ),
+                                            100
+                                          )}%`,
+                                      }}
+                                    />
+
+                                  </div>
+
+                                  <strong>
+                                    {value}
+                                  </strong>
+
+                                </div>
+                              );
+                            }
+                          )}
+
+                        </div>
+
+
+                        <div className="featured-score-footer">
+
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+
+                              handleViewWhy(
+                                featuredLead
+                              );
+                            }}
+                          >
+                            VIEW WHY →
+                          </button>
+
+                        </div>
+
+                      </aside>
+
+                    </article>
+                  )}
+
+
+                  <div className="secondary-leads-grid">
+
+                    {secondaryLeads.map(
+                      (lead) => {
+
+                        const risk =
+                          getRisk(
+                            lead.score
+                          );
+
+                        return (
+                          <article
+                            key={
+                              lead.id
+                            }
+                            className={`secondary-lead-card risk-${risk.className} ${
+                              networkLead?.id ===
+                              lead.id
+                                ? 'network-selected'
+                                : ''
+                            }`}
+                            onClick={() =>
+                              handleNetworkSelect(
+                                lead
+                              )
+                            }
+                          >
+
+                            <div className="secondary-lead-top">
 
                               <div>
-
-                                <span className="lead-id">
-                                  {lead.id}
-                                </span>
 
                                 <h3>
                                   {lead.label}
                                 </h3>
 
-                                <span
-                                  className={`lead-risk-badge risk-${riskClass}`}
-                                >
-                                  {riskLevel}
-                                </span>
-
-                                {isNetworkSelected && (
-                                  <span className="network-focus-badge">
-                                    NETWORK FOCUS
-                                  </span>
-                                )}
+                                <p>
+                                  {lead
+                                    .reasons?.[0] ||
+                                    'Priority entity'}
+                                </p>
 
                               </div>
 
-                              <div className="lead-score">
-
-                                <span>
-                                  SCORE
-                                </span>
-
-                                <strong>
-                                  {score}
-                                </strong>
-
-                                <div className="lead-score-bar">
-
-                                  <div
-                                    className={`lead-score-fill score-${riskClass}`}
-                                    style={{
-                                      width:
-                                        `${Math.min(
-                                          Math.max(
-                                            score,
-                                            0
-                                          ),
-                                          100
-                                        )}%`,
-                                    }}
-                                  />
-
-                                </div>
-
-                              </div>
+                              <strong className="secondary-lead-score">
+                                {Number(
+                                  lead.score
+                                ) || 0}
+                              </strong>
 
                             </div>
 
-                            <div className="signal-grid">
 
-                              <div>
-                                <span>
-                                  Financial
-                                </span>
-
-                                <strong>
-                                  {Math.round(
-                                    Number(
-                                      signals.financial ||
-                                      0
-                                    ) * 100
-                                  )}
-                                </strong>
-                              </div>
-
-                              <div>
-                                <span>
-                                  Communication
-                                </span>
-
-                                <strong>
-                                  {Math.round(
-                                    Number(
-                                      signals.communication ||
-                                      0
-                                    ) * 100
-                                  )}
-                                </strong>
-                              </div>
-
-                              <div>
-                                <span>
-                                  Cross-source
-                                </span>
-
-                                <strong>
-                                  {Math.round(
-                                    Number(
-                                      signals.crossSource ||
-                                      0
-                                    ) * 100
-                                  )}
-                                </strong>
-                              </div>
-
-                              <div>
-                                <span>
-                                  Temporal
-                                </span>
-
-                                <strong>
-                                  {Math.round(
-                                    Number(
-                                      signals.temporal ||
-                                      0
-                                    ) * 100
-                                  )}
-                                </strong>
-                              </div>
-
-                              <div>
-                                <span>
-                                  Centrality
-                                </span>
-
-                                <strong>
-                                  {Math.round(
-                                    Number(
-                                      signals.centrality ||
-                                      0
-                                    ) * 100
-                                  )}
-                                </strong>
-                              </div>
-
+                            <div className="secondary-score-label">
+                              SCORE
                             </div>
 
-                            {lead.reasons?.length >
-                              0 && (
-                                <div className="lead-reasons">
 
-                                  <span>
-                                    KEY SIGNALS
-                                  </span>
+                            <div className="secondary-lead-divider" />
 
-                                  <ul>
 
-                                    {lead.reasons
-                                      .slice(
-                                        0,
-                                        2
-                                      )
-                                      .map(
-                                        (
-                                          reason,
-                                          reasonIndex
-                                        ) => (
-                                          <li
-                                            key={
-                                              reasonIndex
-                                            }
-                                          >
-                                            {reason}
-                                          </li>
-                                        )
-                                      )}
+                            <div className="secondary-lead-bottom">
 
-                                  </ul>
-
-                                </div>
-                              )}
-
-                            <div className="lead-actions">
+                              <span>
+                                ◉{' '}
+                                {(
+                                  lead.reasons ||
+                                  []
+                                ).length}{' '}
+                                Signals
+                              </span>
 
                               <button
                                 type="button"
-                                className="why-button"
-                                onClick={(
-                                  event
-                                ) => {
+                                onClick={(event) => {
+
                                   event.stopPropagation();
 
                                   handleViewWhy(
                                     lead
                                   );
+
                                 }}
                               >
-                                View Why →
+                                INSPECT
                               </button>
 
                             </div>
 
-                          </div>
+                          </article>
+                        );
+                      }
+                    )}
 
-                        </div>
-                      );
-                    }
-                  )}
+                  </div>
 
                 </div>
               )}
@@ -1352,22 +1296,115 @@ function CaseWorkspace({ caseId, onBack }) {
             </>
           )}
 
-      </section>
+        </section>
+      )}
+
+
+      {/* =================================================
+          NETWORK
+      ================================================== */}
+
+      {activeTab === 'network' && (
+        <section className="workspace-module">
+
+          <div className="network-focus-bar">
+
+            <div className="network-focus-heading">
+
+              <span className="network-focus-label">
+                NETWORK FOCUS
+              </span>
+
+              <strong className="network-focus-name">
+                {networkLead?.label ||
+                  leads[0]?.label ||
+                  'Primary Entity'}
+              </strong>
+
+            </div>
+
+            <small>
+              Select a lead from Priority Leads
+              to change the network focus.
+            </small>
+
+          </div>
+
+
+          {isAnalyzed &&
+          leads.length > 0 ? (
+
+            <NetworkGraph
+              caseId={caseId}
+              selectedLead={
+                networkLead
+              }
+            />
+
+          ) : (
+
+            <div className="priority-empty-state">
+
+              <h2>
+                Network unavailable
+              </h2>
+
+              <p>
+                Analyze the investigation first
+                to generate network intelligence.
+              </p>
+
+              <button
+                type="button"
+                className="priority-analyze-button"
+                onClick={handleAnalyze}
+                disabled={analyzing}
+              >
+                {analyzing
+                  ? 'Analyzing...'
+                  : 'Analyze Case →'}
+              </button>
+
+            </div>
+          )}
+
+        </section>
+      )}
+
+
+      {/* =================================================
+          REPORTS
+      ================================================== */}
+
+      {activeTab === 'reports' && (
+        <section className="workspace-module">
+
+          <InvestigationIntel
+            caseId={caseId}
+            defaultTab="report"
+          />
+
+        </section>
+      )}
+
 
       {/* =================================================
           LEAD EXPLANATION MODAL
-          ================================================= */}
+      ================================================== */}
 
       {selectedLead && (
         <LeadExplanation
           caseId={caseId}
           lead={selectedLead}
-          onClose={closeLeadWhy}
+          onClose={
+            closeLeadWhy
+          }
         />
       )}
 
     </div>
   );
 }
+
 
 export default CaseWorkspace;

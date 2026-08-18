@@ -2271,7 +2271,618 @@ app.get(
 
 );
 
+// =====================================================
+// EVIDENCE VAULT
+// =====================================================
 
+function buildEvidenceFromCase(
+    caseId,
+    caseInfo,
+    caseDir
+) {
+
+    const evidence = [];
+
+    const entitiesPath =
+        path.join(
+            caseDir,
+            'Entities.csv'
+        );
+
+    let entities = [];
+
+    if (
+        fs.existsSync(
+            entitiesPath
+        )
+    ) {
+        entities =
+            parseCSV(
+                entitiesPath
+            );
+    }
+
+    function findEntity(
+        source,
+        row
+    ) {
+
+        if (!entities.length) {
+            return 'Unknown';
+        }
+
+        let match = null;
+
+        if (source === 'Bank') {
+
+            match =
+                entities.find(
+                    entity =>
+                        entity.account &&
+                        (
+                            entity.account ===
+                                row.from_account ||
+                            entity.account ===
+                                row.to_account
+                        )
+                );
+
+        }
+
+        if (source === 'CDR') {
+
+            match =
+                entities.find(
+                    entity =>
+                        entity.phone &&
+                        (
+                            entity.phone ===
+                                row.caller ||
+                            entity.phone ===
+                                row.receiver
+                        )
+                );
+
+        }
+
+        if (source === 'Social') {
+
+            match =
+                entities.find(
+                    entity =>
+                        entity.handle &&
+                        entity.handle ===
+                            row.handle
+                );
+
+        }
+
+        return (
+            match?.label ||
+            match?.entity_id ||
+            'Unknown'
+        );
+    }
+
+let verificationStatuses = {};
+
+const verificationPath =
+    path.join(
+        caseDir,
+        'evidence-status.json'
+    );
+
+if (
+    fs.existsSync(
+        verificationPath
+    )
+) {
+
+    verificationStatuses =
+        JSON.parse(
+            fs.readFileSync(
+                verificationPath,
+                'utf8'
+            )
+        );
+
+}
+    function createEvidence(
+        source,
+        type,
+        row,
+        index,
+        detailTitle
+    ) {
+
+        const sourceCode =
+            source
+                .substring(0, 3)
+                .toUpperCase();
+
+        const evidenceId =
+            `EV-${caseId}-${sourceCode}-${String(
+                index + 1
+            ).padStart(4, '0')}`;
+
+        const timestamp =
+            row.timestamp ||
+            null;
+
+        const relatedEntity =
+            findEntity(
+                source,
+                row
+            );
+
+        const rawPreview =
+            Object.entries(row)
+                .map(
+                    ([key, value]) =>
+                        `${key.toUpperCase()}: ${value}`
+                )
+                .join('\n');
+
+        return {
+
+            evidenceId,
+
+            source,
+
+            type,
+
+            detailTitle,
+
+            relatedEntity,
+
+            caseId,
+
+            caseName:
+                caseInfo.name,
+
+            timestamp,
+
+            status:
+    verificationStatuses[evidenceId]?.status ||
+    'Pending Review',
+
+            description:
+                `${type} evidence collected from the ${source} source.`,
+
+            rawPreview,
+
+        };
+    }
+
+
+    // -----------------------------------------
+    // BANK
+    // -----------------------------------------
+
+    const bankPath =
+        path.join(
+            caseDir,
+            'Bank.csv'
+        );
+
+    if (
+        fs.existsSync(bankPath)
+    ) {
+
+        const rows =
+            parseCSV(bankPath);
+
+        rows.forEach(
+            (row, index) => {
+
+                evidence.push(
+                    createEvidence(
+                        'Bank',
+                        'Wire Transfer',
+                        row,
+                        index,
+                        'Wire Transfer Record'
+                    )
+                );
+
+            }
+        );
+
+    }
+
+
+    // -----------------------------------------
+    // CDR
+    // -----------------------------------------
+
+    const cdrPath =
+        path.join(
+            caseDir,
+            'CDR.csv'
+        );
+
+    if (
+        fs.existsSync(cdrPath)
+    ) {
+
+        const rows =
+            parseCSV(cdrPath);
+
+        rows.forEach(
+            (row, index) => {
+
+                evidence.push(
+                    createEvidence(
+                        'CDR',
+                        'Call Log',
+                        row,
+                        index,
+                        'Call Log Record'
+                    )
+                );
+
+            }
+        );
+
+    }
+
+
+    // -----------------------------------------
+    // SOCIAL
+    // -----------------------------------------
+
+    const socialPath =
+        path.join(
+            caseDir,
+            'Social.csv'
+        );
+
+    if (
+        fs.existsSync(socialPath)
+    ) {
+
+        const rows =
+            parseCSV(socialPath);
+
+        rows.forEach(
+            (row, index) => {
+
+                evidence.push(
+                    createEvidence(
+                        'Social',
+                        'Post Extracted',
+                        row,
+                        index,
+                        'Social Post Record'
+                    )
+                );
+
+            }
+        );
+
+    }
+
+
+    return evidence;
+}
+
+
+// =====================================================
+// GET ALL EVIDENCE
+// =====================================================
+
+app.get(
+    '/api/evidence',
+    (req, res) => {
+
+        try {
+
+            const caseFilter =
+                req.query.caseId ||
+                null;
+
+            const sourceFilter =
+                req.query.source ||
+                null;
+
+            const allEvidence = [];
+
+            const caseFolders =
+                fs.readdirSync(
+                    CASES_DIR
+                );
+
+            caseFolders.forEach(
+                caseId => {
+
+                    if (
+                        caseFilter &&
+                        caseId !== caseFilter
+                    ) {
+                        return;
+                    }
+
+                    const caseDir =
+                        path.join(
+                            CASES_DIR,
+                            caseId
+                        );
+
+                    const caseFile =
+                        path.join(
+                            caseDir,
+                            'case.json'
+                        );
+
+                    if (
+                        !fs.existsSync(
+                            caseFile
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const caseInfo =
+                        JSON.parse(
+                            fs.readFileSync(
+                                caseFile,
+                                'utf8'
+                            )
+                        );
+
+                    const caseEvidence =
+                        buildEvidenceFromCase(
+                            caseId,
+                            caseInfo,
+                            caseDir
+                        );
+
+                    caseEvidence.forEach(
+                        item => {
+
+                            if (
+                                sourceFilter &&
+                                item.source !==
+                                    sourceFilter
+                            ) {
+                                return;
+                            }
+
+                            allEvidence.push(
+                                item
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+
+            allEvidence.sort(
+                (a, b) =>
+                    new Date(
+                        b.timestamp || 0
+                    ) -
+                    new Date(
+                        a.timestamp || 0
+                    )
+            );
+
+
+            return res.json({
+
+                success: true,
+
+                count:
+                    allEvidence.length,
+
+                evidence:
+                    allEvidence
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                'Evidence fetch error:',
+                error
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Failed to fetch evidence'
+
+            });
+
+        }
+
+    }
+
+);
+
+
+// =====================================================
+// VERIFY EVIDENCE
+// =====================================================
+
+app.post(
+    '/api/evidence/:evidenceId/verify',
+    (req, res) => {
+
+        try {
+
+            const {
+                evidenceId
+            } = req.params;
+
+            const caseFolders =
+                fs.readdirSync(
+                    CASES_DIR
+                );
+
+            let foundEvidence = null;
+
+            caseFolders.some(
+                caseId => {
+
+                    const caseDir =
+                        path.join(
+                            CASES_DIR,
+                            caseId
+                        );
+
+                    const caseFile =
+                        path.join(
+                            caseDir,
+                            'case.json'
+                        );
+
+                    if (
+                        !fs.existsSync(
+                            caseFile
+                        )
+                    ) {
+                        return false;
+                    }
+
+                    const caseInfo =
+                        JSON.parse(
+                            fs.readFileSync(
+                                caseFile,
+                                'utf8'
+                            )
+                        );
+
+                    const caseEvidence =
+                        buildEvidenceFromCase(
+                            caseId,
+                            caseInfo,
+                            caseDir
+                        );
+
+                    const match =
+                        caseEvidence.find(
+                            item =>
+                                item.evidenceId ===
+                                evidenceId
+                        );
+
+                    if (!match) {
+                        return false;
+                    }
+
+                    foundEvidence = match;
+
+                    const verificationPath =
+                        path.join(
+                            caseDir,
+                            'evidence-status.json'
+                        );
+
+                    let statuses = {};
+
+                    if (
+                        fs.existsSync(
+                            verificationPath
+                        )
+                    ) {
+
+                        statuses =
+                            JSON.parse(
+                                fs.readFileSync(
+                                    verificationPath,
+                                    'utf8'
+                                )
+                            );
+
+                    }
+
+                    statuses[
+                        evidenceId
+                    ] = {
+                        status:
+                            'Verified',
+
+                        verifiedAt:
+                            new Date().toISOString(),
+                    };
+
+                    fs.writeFileSync(
+                        verificationPath,
+                        JSON.stringify(
+                            statuses,
+                            null,
+                            2
+                        )
+                    );
+
+                    foundEvidence = {
+                        ...foundEvidence,
+                        status: 'Verified',
+                        verifiedAt:
+                            statuses[
+                                evidenceId
+                            ].verifiedAt,
+                    };
+
+                    return true;
+
+                }
+            );
+
+
+            if (!foundEvidence) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        'Evidence not found'
+
+                });
+
+            }
+
+
+            return res.json({
+
+                success: true,
+
+                evidence:
+                    foundEvidence
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                'Evidence verification error:',
+                error
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    'Failed to verify evidence'
+
+            });
+
+        }
+
+    }
+
+);
 // =====================================================
 // ERROR HANDLER
 // =====================================================

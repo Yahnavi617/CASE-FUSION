@@ -6,13 +6,15 @@ import {
 
 import NetworkGraph from '../components/NetworkGraph';
 import LeadExplanation from '../components/LeadExplanation';
-import Evidence from './Evidence';
+import InvestigationIntel from '../components/InvestigationIntel';
 
 import {
   getCase,
   getLeads,
   analyzeCase,
 } from '../services/api';
+
+import './CaseWorkspace.css';
 
 
 function CaseWorkspace({
@@ -45,15 +47,22 @@ function CaseWorkspace({
 
   const [scoreSort, setScoreSort] =
     useState('high-to-low');
-    const [activeTab, setActiveTab] =
-  useState('leads');
+
+  const [activeTab, setActiveTab] =
+    useState('overview');
 
 
   /* =====================================================
      LOAD CASE
-     ===================================================== */
+  ===================================================== */
 
   useEffect(() => {
+    if (!caseId) {
+      setError('Case ID is missing.');
+      setLoading(false);
+      return;
+    }
+
     loadCase();
   }, [caseId]);
 
@@ -66,23 +75,33 @@ function CaseWorkspace({
       const caseResponse =
         await getCase(caseId);
 
-      setCaseInfo(
-        caseResponse.case
-      );
+      const loadedCase =
+        caseResponse?.case;
+
+      if (!loadedCase) {
+        throw new Error(
+          'Case information was not returned.'
+        );
+      }
+
+      setCaseInfo(loadedCase);
 
       if (
-        caseResponse.case.status ===
-        'analyzed'
+        String(
+          loadedCase.status || ''
+        ).toLowerCase() === 'analyzed'
       ) {
         const leadsResponse =
           await getLeads(caseId);
 
         const loadedLeads =
-          leadsResponse.leads || [];
+          Array.isArray(
+            leadsResponse?.leads
+          )
+            ? leadsResponse.leads
+            : [];
 
-        setLeads(
-          loadedLeads
-        );
+        setLeads(loadedLeads);
 
         setNetworkLead(
           loadedLeads[0] || null
@@ -98,8 +117,8 @@ function CaseWorkspace({
       );
 
       setError(
-        err.message ||
-          'Failed to load investigation.'
+        err?.message ||
+        'Failed to load investigation.'
       );
     } finally {
       setLoading(false);
@@ -108,10 +127,14 @@ function CaseWorkspace({
 
 
   /* =====================================================
-     ANALYZE CASE
-     ===================================================== */
+     ANALYZE
+  ===================================================== */
 
   async function handleAnalyze() {
+    if (analyzing) {
+      return;
+    }
+
     try {
       setAnalyzing(true);
       setError('');
@@ -120,11 +143,13 @@ function CaseWorkspace({
         await analyzeCase(caseId);
 
       const analyzedLeads =
-        response.leads || [];
+        Array.isArray(
+          response?.leads
+        )
+          ? response.leads
+          : [];
 
-      setLeads(
-        analyzedLeads
-      );
+      setLeads(analyzedLeads);
 
       setNetworkLead(
         analyzedLeads[0] || null
@@ -132,7 +157,7 @@ function CaseWorkspace({
 
       setCaseInfo(
         (previous) => ({
-          ...previous,
+          ...(previous || {}),
 
           status: 'analyzed',
 
@@ -140,9 +165,12 @@ function CaseWorkspace({
             new Date().toISOString(),
 
           leadCount:
-            response.count,
+            response?.count ??
+            analyzedLeads.length,
         })
       );
+
+      setActiveTab('leads');
     } catch (err) {
       console.error(
         'Analysis failed:',
@@ -150,8 +178,8 @@ function CaseWorkspace({
       );
 
       setError(
-        err.message ||
-          'Failed to analyze case.'
+        err?.message ||
+        'Failed to analyze case.'
       );
     } finally {
       setAnalyzing(false);
@@ -161,30 +189,24 @@ function CaseWorkspace({
 
   /* =====================================================
      LEAD ACTIONS
-     ===================================================== */
+  ===================================================== */
 
-  function handleViewWhy(
-    lead
-  ) {
+  function handleViewWhy(lead) {
     setSelectedLead(lead);
   }
-
 
   function closeLeadWhy() {
     setSelectedLead(null);
   }
 
-
-  function handleNetworkSelect(
-    lead
-  ) {
+  function handleNetworkSelect(lead) {
     setNetworkLead(lead);
   }
 
 
   /* =====================================================
-     DERIVED DATA
-     ===================================================== */
+     RISK SUMMARY
+  ===================================================== */
 
   const riskSummary =
     useMemo(() => {
@@ -197,13 +219,11 @@ function CaseWorkspace({
       leads.forEach(
         (lead) => {
           const score =
-            Number(lead.score) || 0;
+            Number(lead?.score) || 0;
 
           if (score >= 80) {
             summary.high += 1;
-          } else if (
-            score >= 50
-          ) {
+          } else if (score >= 50) {
             summary.medium += 1;
           } else {
             summary.low += 1;
@@ -215,105 +235,125 @@ function CaseWorkspace({
     }, [leads]);
 
 
-  const averageScore =
-    useMemo(() => {
-      if (!leads.length) {
-        return 0;
-      }
+  /* =====================================================
+     FILTER + SORT
+  ===================================================== */
 
-      const total =
-        leads.reduce(
-          (sum, lead) =>
-            sum +
-            (Number(
-              lead.score
-            ) || 0),
-          0
+  const displayedLeads =
+    useMemo(() => {
+      const filtered =
+        leads.filter(
+          (lead) => {
+            const score =
+              Number(lead?.score) || 0;
+
+            if (riskFilter === 'high') {
+              return score >= 80;
+            }
+
+            if (riskFilter === 'medium') {
+              return (
+                score >= 50 &&
+                score < 80
+              );
+            }
+
+            if (riskFilter === 'low') {
+              return score < 50;
+            }
+
+            return true;
+          }
         );
 
-      return Math.round(
-        total / leads.length
-      );
-    }, [leads]);
+      return [...filtered].sort(
+        (a, b) => {
+          const scoreA =
+            Number(a?.score) || 0;
 
+          const scoreB =
+            Number(b?.score) || 0;
 
-  const topLead =
-    useMemo(() => {
-      if (!leads.length) {
-        return null;
-      }
-
-      return [...leads].sort(
-        (a, b) =>
-          (Number(b.score) || 0) -
-          (Number(a.score) || 0)
-      )[0];
-    }, [leads]);
-
-
-  const strongestSignal =
-    useMemo(() => {
-      if (!leads.length) {
-        return '—';
-      }
-
-      const signalTotals = {
-        Financial: 0,
-        Communication: 0,
-        'Cross-source': 0,
-        Temporal: 0,
-        Centrality: 0,
-      };
-
-      leads.forEach(
-        (lead) => {
-          const signals =
-            lead.signals || {};
-
-          signalTotals.Financial +=
-            Number(
-              signals.financial || 0
-            );
-
-          signalTotals.Communication +=
-            Number(
-              signals.communication || 0
-            );
-
-          signalTotals[
-            'Cross-source'
-          ] +=
-            Number(
-              signals.crossSource ||
-                0
-            );
-
-          signalTotals.Temporal +=
-            Number(
-              signals.temporal || 0
-            );
-
-          signalTotals.Centrality +=
-            Number(
-              signals.centrality || 0
-            );
+          return scoreSort ===
+            'low-to-high'
+            ? scoreA - scoreB
+            : scoreB - scoreA;
         }
       );
+    }, [
+      leads,
+      riskFilter,
+      scoreSort,
+    ]);
 
-      return (
-        Object.entries(
-          signalTotals
-        ).sort(
-          (a, b) =>
-            b[1] - a[1]
-        )[0]?.[0] || '—'
-      );
-    }, [leads]);
+
+  const featuredLead =
+    displayedLeads[0] || null;
+
+  const secondaryLeads =
+    displayedLeads
+      .slice(1, 4);
 
 
   /* =====================================================
-     CSV EXPORT
-     ===================================================== */
+     HELPERS
+  ===================================================== */
+
+  function getRisk(score) {
+    const value =
+      Number(score) || 0;
+
+    if (value >= 80) {
+      return {
+        label: 'HIGH RISK',
+        className: 'high',
+      };
+    }
+
+    if (value >= 50) {
+      return {
+        label: 'MEDIUM RISK',
+        className: 'medium',
+      };
+    }
+
+    return {
+      label: 'LOW RISK',
+      className: 'low',
+    };
+  }
+
+
+  function getSignalValue(
+    signals,
+    key
+  ) {
+    return Math.round(
+      (
+        Number(
+          signals?.[key]
+        ) || 0
+      ) * 100
+    );
+  }
+
+
+  function getSignalClass(value) {
+    if (value >= 80) {
+      return 'danger';
+    }
+
+    if (value >= 50) {
+      return 'warning';
+    }
+
+    return 'safe';
+  }
+
+
+  /* =====================================================
+     EXPORT CSV
+  ===================================================== */
 
   function handleExportLeads() {
     if (!leads.length) {
@@ -337,8 +377,7 @@ function CaseWorkspace({
       leads.map(
         (lead) => {
           const score =
-            Number(lead.score) ||
-            0;
+            Number(lead?.score) || 0;
 
           const risk =
             score >= 80
@@ -348,84 +387,65 @@ function CaseWorkspace({
                 : 'Low';
 
           const signals =
-            lead.signals || {};
-
-          const reasons =
-            (
-              lead.reasons ||
-              []
-            ).join(' | ');
+            lead?.signals || {};
 
           return [
-            lead.id || '',
-            lead.label || '',
+            lead?.id || '',
+            lead?.label || '',
             score,
             risk,
-
             Math.round(
               Number(
-                signals.financial ||
-                  0
+                signals.financial
               ) * 100
-            ),
-
+            ) || 0,
             Math.round(
               Number(
-                signals.communication ||
-                  0
+                signals.communication
               ) * 100
-            ),
-
+            ) || 0,
             Math.round(
               Number(
-                signals.crossSource ||
-                  0
+                signals.crossSource
               ) * 100
-            ),
-
+            ) || 0,
             Math.round(
               Number(
-                signals.temporal ||
-                  0
+                signals.temporal
               ) * 100
-            ),
-
+            ) || 0,
             Math.round(
               Number(
-                signals.centrality ||
-                  0
+                signals.centrality
               ) * 100
-            ),
-
-            reasons,
+            ) || 0,
+            (
+              lead?.reasons || []
+            ).join(' | '),
           ];
         }
       );
 
-    const csv =
-      [
-        headers,
-        ...rows,
-      ]
-        .map(
-          (row) =>
-            row
-              .map(
-                (value) => {
-                  const text =
-                    String(
-                      value
-                    ).replace(
-                      /"/g,
-                      '""'
-                    );
+    const escapeCsv =
+      (value) =>
+        `"${String(
+          value ?? ''
+        ).replace(
+          /"/g,
+          '""'
+        )}"`;
 
-                  return `"${text}"`;
-                }
-              )
-              .join(',')
-        )
-        .join('\n');
+    const csv = [
+      headers,
+      ...rows,
+    ]
+      .map(
+        (row) =>
+          row
+            .map(escapeCsv)
+            .join(',')
+      )
+      .join('\n');
 
     const blob =
       new Blob(
@@ -437,197 +457,36 @@ function CaseWorkspace({
       );
 
     const url =
-      URL.createObjectURL(
-        blob
-      );
+      URL.createObjectURL(blob);
 
     const link =
-      document.createElement(
-        'a'
-      );
+      document.createElement('a');
 
     link.href = url;
 
     link.download =
-      `${
-        caseInfo?.caseId ||
-        'case'
-      }-leads.csv`;
+      `casefusion-${caseId}-leads.csv`;
 
-    document.body.appendChild(
-      link
-    );
+    document.body.appendChild(link);
 
     link.click();
 
-    document.body.removeChild(
-      link
-    );
+    document.body.removeChild(link);
 
-    URL.revokeObjectURL(
-      url
-    );
+    URL.revokeObjectURL(url);
   }
 
 
-  /* =====================================================
-     FILTER + SORT
-     ===================================================== */
-
-  const displayedLeads =
-    useMemo(() => {
-      const filtered =
-        leads.filter(
-          (lead) => {
-            const score =
-              Number(
-                lead.score
-              ) || 0;
-
-            if (
-              riskFilter ===
-              'high'
-            ) {
-              return score >= 80;
-            }
-
-            if (
-              riskFilter ===
-              'medium'
-            ) {
-              return (
-                score >= 50 &&
-                score < 80
-              );
-            }
-
-            if (
-              riskFilter ===
-              'low'
-            ) {
-              return score < 50;
-            }
-
-            return true;
-          }
-        );
-
-      return [
-        ...filtered,
-      ].sort(
-        (a, b) => {
-          const scoreA =
-            Number(a.score) ||
-            0;
-
-          const scoreB =
-            Number(b.score) ||
-            0;
-
-          if (
-            scoreSort ===
-            'low-to-high'
-          ) {
-            return (
-              scoreA - scoreB
-            );
-          }
-
-          return (
-            scoreB - scoreA
-          );
-        }
-      );
-    }, [
-      leads,
-      riskFilter,
-      scoreSort,
-    ]);
-
-
-  /* =====================================================
-     FEATURED LEAD
-     ===================================================== */
-
-  const featuredLead =
-    displayedLeads[0] ||
-    topLead ||
-    null;
-
-
-  const secondaryLeads =
-    displayedLeads
-      .filter(
-        (lead) =>
-          lead.id !==
-          featuredLead?.id
-      )
-      .slice(0, 3);
-
-
-  /* =====================================================
-     HELPERS
-     ===================================================== */
-
-  function getRisk(score) {
-    const numericScore =
-      Number(score) || 0;
-
-    if (
-      numericScore >= 80
-    ) {
-      return {
-        label: 'HIGH RISK',
-        className: 'high',
-      };
-    }
-
-    if (
-      numericScore >= 50
-    ) {
-      return {
-        label: 'MEDIUM RISK',
-        className: 'medium',
-      };
-    }
-
-    return {
-      label: 'LOW RISK',
-      className: 'low',
-    };
-  }
-
-
-  function getSignalValue(
-    signals,
-    key
-  ) {
-    return Math.round(
-      Number(
-        signals?.[key] || 0
-      ) * 100
-    );
-  }
-
-
-  function getSignalClass(
-    value
-  ) {
-    if (value >= 80) {
-      return 'danger';
-    }
-
-    if (value >= 50) {
-      return 'warning';
-    }
-
-    return 'safe';
-  }
+  const isAnalyzed =
+    String(
+      caseInfo?.status || ''
+    ).toLowerCase() ===
+    'analyzed';
 
 
   /* =====================================================
      LOADING
-     ===================================================== */
+  ===================================================== */
 
   if (loading) {
     return (
@@ -642,7 +501,7 @@ function CaseWorkspace({
 
   /* =====================================================
      ERROR
-     ===================================================== */
+  ===================================================== */
 
   if (
     error &&
@@ -650,6 +509,7 @@ function CaseWorkspace({
   ) {
     return (
       <div className="workspace-page">
+
         <div className="workspace-error">
 
           <h2>
@@ -669,122 +529,88 @@ function CaseWorkspace({
           </button>
 
         </div>
+
       </div>
     );
   }
 
 
-  const isAnalyzed =
-    caseInfo?.status ===
-    'analyzed';
-
-
   /* =====================================================
      RENDER
-     ===================================================== */
+  ===================================================== */
 
   return (
     <div className="workspace-page">
 
+      {/* HEADER */}
 
-      {/* =================================================
-          EXISTING WORKSPACE HEADER
-          ================================================= */}
+      <header className="workspace-header">
 
-<header className="workspace-header">
+        <div className="workspace-header-left">
 
-  <div className="workspace-header-left">
+          <button
+            type="button"
+            className="workspace-back-button"
+            onClick={onBack}
+          >
+            ← All Investigations
+          </button>
 
-    <button
-      type="button"
-      className="workspace-case-button"
-      onClick={onBack}
-    >
-      CASE: {caseInfo?.name || 'CASE'}
-    </button>
+          <div className="workspace-case-info">
 
-  </div>
+            <span>
+              CASE
+            </span>
 
-  <nav className="workspace-tabs">
+            <strong>
+              {caseInfo?.name ||
+                caseInfo?.caseName ||
+                'Untitled Investigation'}
+            </strong>
 
-    <button
-      type="button"
-      className={
-        activeTab === 'overview'
-          ? 'active'
-          : ''
-      }
-      onClick={() =>
-        setActiveTab('overview')
-      }
-    >
-      Overview
-    </button>
+            <small>
+              {caseInfo?.caseId ||
+                caseId}
+            </small>
 
-    <button
-      type="button"
-      className={
-        activeTab === 'evidence'
-          ? 'active'
-          : ''
-      }
-      onClick={() =>
-        setActiveTab('evidence')
-      }
-    >
-      Evidence
-    </button>
+          </div>
 
-    <button
-      type="button"
-      className={
-        activeTab === 'leads'
-          ? 'active'
-          : ''
-      }
-      onClick={() =>
-        setActiveTab('leads')
-      }
-    >
-      Leads
-    </button>
-
-    <button
-      type="button"
-      className={
-        activeTab === 'network'
-          ? 'active'
-          : ''
-      }
-      onClick={() =>
-        setActiveTab('network')
-      }
-    >
-      Network
-    </button>
-
-    <button
-      type="button"
-      className={
-        activeTab === 'reports'
-          ? 'active'
-          : ''
-      }
-      onClick={() =>
-        setActiveTab('reports')
-      }
-    >
-      Reports
-    </button>
-
-  </nav>
-
-</header>
+        </div>
 
 
-      {/* =================================================
-          ERROR
-          ================================================= */}
+        <nav className="workspace-tabs">
+
+          {[
+            ['overview', 'Overview'],
+            ['evidence', 'Evidence'],
+            ['leads', 'Leads'],
+            ['network', 'Network'],
+            ['reports', 'Reports'],
+          ].map(
+            ([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={
+                  activeTab === id
+                    ? 'active'
+                    : ''
+                }
+                onClick={() =>
+                  setActiveTab(id)
+                }
+              >
+                {label}
+              </button>
+            )
+          )}
+
+        </nav>
+
+      </header>
+
+
+      {/* ERROR */}
 
       {error && (
         <div className="workspace-inline-error">
@@ -794,42 +620,215 @@ function CaseWorkspace({
 
 
       {/* =================================================
-          LEADS PAGE
-          ================================================= */}
+          OVERVIEW
+      ================================================== */}
 
-      {activeTab === 'leads' && (
-  <section className="priority-leads-page">
-        {/* =================================================
-            PAGE HEADING
-            ================================================= */}
+      {activeTab === 'overview' && (
+        <section className="workspace-overview">
 
-        <div className="priority-leads-heading">
+          <div className="priority-leads-heading">
 
-          <div>
+            <div>
 
-            <div className="priority-leads-eyebrow">
-              CASE INTELLIGENCE
+              <div className="priority-leads-eyebrow">
+                CASE INTELLIGENCE
+              </div>
+
+              <h1>
+                Investigation Dashboard
+              </h1>
+
+              <p>
+                Monitor evidence, relationships,
+                priority leads and intelligence
+                signals for this investigation.
+              </p>
+
             </div>
 
-            <h2>
-              Priority Leads
-            </h2>
-
-            <p>
-              Entities ranked by the
-              CASEFUSION scoring engine.
-            </p>
+            {!isAnalyzed && (
+              <button
+                type="button"
+                className="priority-analyze-button"
+                onClick={handleAnalyze}
+                disabled={analyzing}
+              >
+                {analyzing
+                  ? 'Analyzing...'
+                  : 'Analyze Case →'}
+              </button>
+            )}
 
           </div>
 
 
-          {isAnalyzed &&
-            leads.length > 0 && (
+          <div className="workspace-summary-grid">
+
+            <div className="workspace-summary-card">
+
+              <span>
+                CASE STATUS
+              </span>
+
+              <strong>
+                {caseInfo?.status ||
+                  'Pending'}
+              </strong>
+
+            </div>
+
+
+            <div className="workspace-summary-card">
+
+              <span>
+                TOTAL LEADS
+              </span>
+
+              <strong>
+                {leads.length}
+              </strong>
+
+            </div>
+
+
+            <div className="workspace-summary-card">
+
+              <span>
+                HIGH RISK
+              </span>
+
+              <strong className="danger-text">
+                {riskSummary.high}
+              </strong>
+
+            </div>
+
+
+            <div className="workspace-summary-card">
+
+              <span>
+                MEDIUM RISK
+              </span>
+
+              <strong className="warning-text">
+                {riskSummary.medium}
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <div className="workspace-intel-card">
+
+            <div>
+
+              <div className="priority-leads-eyebrow">
+                DIGITAL EVIDENCE & CORRELATION
+              </div>
+
+              <h2>
+                Investigation Intelligence
+              </h2>
+
+              <p>
+                Unified analysis across telecom,
+                banking, social, device and
+                investigative evidence.
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setActiveTab('evidence')
+              }
+            >
+              Open Intelligence →
+            </button>
+
+          </div>
+
+
+          <InvestigationIntel
+            caseId={caseId}
+            defaultTab="overview"
+          />
+
+        </section>
+      )}
+
+
+      {/* =================================================
+          EVIDENCE
+      ================================================== */}
+
+      {activeTab === 'evidence' && (
+        <section className="workspace-module">
+
+          <InvestigationIntel
+            caseId={caseId}
+            defaultTab="evidence"
+          />
+
+        </section>
+      )}
+
+
+      {/* =================================================
+          LEADS
+      ================================================== */}
+
+      {activeTab === 'leads' && (
+        <section className="priority-leads-page">
+
+          <div className="priority-leads-heading">
+
+            <div>
+
+              <div className="priority-leads-eyebrow">
+                CASE INTELLIGENCE
+              </div>
+
+              <h1>
+                Priority Leads
+              </h1>
+
+              <p>
+                Entities ranked by the
+                CASEFUSION scoring engine.
+              </p>
+
+            </div>
+
+
+            {isAnalyzed && (
               <div className="priority-leads-actions">
 
-                <span className="priority-lead-count">
-                  {leads.length} leads
-                </span>
+                <div className="priority-stat">
+
+                  <strong>
+                    {leads.length}
+                  </strong>
+
+                  <span>
+                    Leads
+                  </span>
+
+                </div>
+
+                <div className="priority-stat priority-stat-danger">
+
+                  <strong>
+                    {riskSummary.high}
+                  </strong>
+
+                  <span>
+                    High Risk
+                  </span>
+
+                </div>
 
                 <button
                   type="button"
@@ -844,86 +843,43 @@ function CaseWorkspace({
               </div>
             )}
 
-        </div>
-
-
-        {/* =================================================
-            NOT ANALYZED
-            ================================================= */}
-
-        {!isAnalyzed && (
-          <div className="priority-empty-state">
-
-            <div className="priority-empty-icon">
-              ⚡
-            </div>
-
-            <h3>
-              Analysis has not been run
-            </h3>
-
-            <p>
-              Run the scoring engine
-              to identify and rank
-              suspicious case entities.
-            </p>
-
-            <button
-              type="button"
-              className="priority-analyze-button"
-              onClick={
-                handleAnalyze
-              }
-              disabled={
-                analyzing
-              }
-            >
-              {analyzing
-                ? 'Analyzing...'
-                : 'Analyze Case →'}
-            </button>
-
           </div>
-        )}
 
 
-        {/* =================================================
-            NO LEADS
-            ================================================= */}
-
-        {isAnalyzed &&
-          leads.length === 0 && (
+          {!isAnalyzed && (
             <div className="priority-empty-state">
 
               <div className="priority-empty-icon">
-                ✓
+                ⚡
               </div>
 
-              <h3>
-                No leads identified
-              </h3>
+              <h2>
+                Analysis has not been run
+              </h2>
 
               <p>
-                The analysis completed
-                but did not return any
-                case entities.
+                Run the CASEFUSION scoring
+                engine to identify and rank
+                priority entities.
               </p>
+
+              <button
+                type="button"
+                className="priority-analyze-button"
+                onClick={handleAnalyze}
+                disabled={analyzing}
+              >
+                {analyzing
+                  ? 'Analyzing...'
+                  : 'Analyze Case →'}
+              </button>
 
             </div>
           )}
 
 
-        {/* =================================================
-            ANALYZED LEADS
-            ================================================= */}
-
-        {isAnalyzed &&
-          leads.length > 0 && (
+          {isAnalyzed && (
             <>
-
-              {/* -------------------------------------------
-                  FILTERS
-              ------------------------------------------- */}
 
               <div className="priority-lead-toolbar">
 
@@ -944,8 +900,7 @@ function CaseWorkspace({
                         key={value}
                         type="button"
                         className={
-                          riskFilter ===
-                          value
+                          riskFilter === value
                             ? 'active'
                             : ''
                         }
@@ -970,12 +925,8 @@ function CaseWorkspace({
                   </span>
 
                   <select
-                    value={
-                      scoreSort
-                    }
-                    onChange={(
-                      event
-                    ) =>
+                    value={scoreSort}
+                    onChange={(event) =>
                       setScoreSort(
                         event.target.value
                       )
@@ -995,10 +946,6 @@ function CaseWorkspace({
               </div>
 
 
-              {/* -------------------------------------------
-                  RESULTS INFO
-              ------------------------------------------- */}
-
               <div className="priority-results-info">
 
                 <span>
@@ -1014,64 +961,48 @@ function CaseWorkspace({
                 </span>
 
                 <span>
-                  {riskSummary.high}{' '}
+                  {riskSummary.high}
+                  {' '}
                   high risk
                 </span>
 
               </div>
 
 
-              {/* -------------------------------------------
-                  FILTER EMPTY
-              ------------------------------------------- */}
+              {displayedLeads.length === 0 ? (
 
-              {displayedLeads.length ===
-                0 && (
                 <div className="priority-filter-empty">
 
-                  <h3>
-                    No leads match
-                    this filter
-                  </h3>
+                  <h2>
+                    No leads found
+                  </h2>
 
                   <p>
-                    Try selecting
-                    another risk level.
+                    Try another risk filter.
                   </p>
 
                   <button
                     type="button"
                     onClick={() =>
-                      setRiskFilter(
-                        'all'
-                      )
+                      setRiskFilter('all')
                     }
                   >
-                    Show All Leads
+                    Show All
                   </button>
 
                 </div>
-              )}
 
+              ) : (
 
-              {/* -------------------------------------------
-                  FEATURED + SECONDARY
-              ------------------------------------------- */}
-
-              {displayedLeads.length >
-                0 && (
                 <div className="priority-lead-layout">
-
-
-                  {/* =======================================
-                      FEATURED LEAD
-                  ======================================= */}
 
                   {featuredLead && (
                     <article
-                      className={`featured-lead-card risk-${getRisk(
-                        featuredLead.score
-                      ).className} ${
+                      className={`featured-lead-card risk-${
+                        getRisk(
+                          featuredLead.score
+                        ).className
+                      } ${
                         networkLead?.id ===
                         featuredLead.id
                           ? 'network-selected'
@@ -1088,107 +1019,66 @@ function CaseWorkspace({
 
                         <div className="featured-lead-header">
 
-                          <div>
+                          <div className="featured-lead-name-row">
 
-                            <div className="featured-lead-name-row">
+                            <h2>
+                              {featuredLead.label}
+                            </h2>
 
-                              <h3>
-                                {
-                                  featuredLead.label
-                                }
-                              </h3>
-
-                              <span
-                                className={`featured-risk-badge risk-${getRisk(
+                            <span
+                              className={`featured-risk-badge risk-${
+                                getRisk(
                                   featuredLead.score
-                                ).className}`}
-                              >
-                                ⚠{' '}
-                                {
-                                  getRisk(
-                                    featuredLead.score
-                                  ).label
-                                }
-                              </span>
-
-                            </div>
-
-                            <p className="featured-lead-subtitle">
-                              {featuredLead.reasons?.[0] ||
-                                'Priority entity identified by the scoring engine.'}
-                            </p>
+                                ).className
+                              }`}
+                            >
+                              {getRisk(
+                                featuredLead.score
+                              ).label}
+                            </span>
 
                           </div>
+
+                          <p className="featured-lead-subtitle">
+                            {featuredLead
+                              .reasons?.[0] ||
+                              'Priority entity identified by the scoring engine.'}
+                          </p>
 
                         </div>
 
 
-                        {/* ---------------------------------
-                            REASONS
-                        --------------------------------- */}
-
                         <div className="featured-reasons">
 
-                          {featuredLead.reasons?.length >
-                          0 ? (
-                            featuredLead.reasons
-                              .slice(
-                                0,
-                                3
+                          {(
+                            featuredLead.reasons ||
+                            []
+                          )
+                            .slice(0, 4)
+                            .map(
+                              (
+                                reason,
+                                index
+                              ) => (
+                                <div
+                                  className="featured-reason"
+                                  key={index}
+                                >
+                                  <span>
+                                    ◉
+                                  </span>
+
+                                  <p>
+                                    {reason}
+                                  </p>
+                                </div>
                               )
-                              .map(
-                                (
-                                  reason,
-                                  index
-                                ) => (
-                                  <div
-                                    key={
-                                      index
-                                    }
-                                    className="featured-reason"
-                                  >
-
-                                    <span>
-                                      {index ===
-                                      0
-                                        ? '▣'
-                                        : index ===
-                                            1
-                                          ? '⌁'
-                                          : '◉'}
-                                    </span>
-
-                                    <p>
-                                      {
-                                        reason
-                                      }
-                                    </p>
-
-                                  </div>
-                                )
-                              )
-                          ) : (
-                            <div className="featured-reason">
-                              <span>
-                                ◉
-                              </span>
-
-                              <p>
-                                No additional
-                                reasons were
-                                returned.
-                              </p>
-                            </div>
-                          )}
+                            )}
 
                         </div>
 
                       </div>
 
-
-                      {/* =================================
-                          FEATURED SCORE PANEL
-                      ================================= */}
 
                       <aside className="featured-score-panel">
 
@@ -1231,10 +1121,8 @@ function CaseWorkspace({
                               'centrality',
                             ],
                           ].map(
-                            ([
-                              label,
-                              key,
-                            ]) => {
+                            ([label, key]) => {
+
                               const value =
                                 getSignalValue(
                                   featuredLead.signals,
@@ -1252,20 +1140,23 @@ function CaseWorkspace({
                                   </span>
 
                                   <div className="featured-signal-bar">
+
                                     <div
                                       className={`featured-signal-fill ${getSignalClass(
                                         value
                                       )}`}
                                       style={{
-                                        width: `${Math.min(
-                                          Math.max(
-                                            value,
-                                            0
-                                          ),
-                                          100
-                                        )}%`,
+                                        width:
+                                          `${Math.min(
+                                            Math.max(
+                                              value,
+                                              0
+                                            ),
+                                            100
+                                          )}%`,
                                       }}
                                     />
+
                                   </div>
 
                                   <strong>
@@ -1284,9 +1175,7 @@ function CaseWorkspace({
 
                           <button
                             type="button"
-                            onClick={(
-                              event
-                            ) => {
+                            onClick={(event) => {
                               event.stopPropagation();
 
                               handleViewWhy(
@@ -1305,14 +1194,11 @@ function CaseWorkspace({
                   )}
 
 
-                  {/* =======================================
-                      SECONDARY LEADS
-                  ======================================= */}
-
                   <div className="secondary-leads-grid">
 
                     {secondaryLeads.map(
-                      (lead, index) => {
+                      (lead) => {
+
                         const risk =
                           getRisk(
                             lead.score
@@ -1321,7 +1207,7 @@ function CaseWorkspace({
                         return (
                           <article
                             key={
-                              `${lead.id || 'lead'}-${index}`
+                              lead.id
                             }
                             className={`secondary-lead-card risk-${risk.className} ${
                               networkLead?.id ===
@@ -1341,24 +1227,21 @@ function CaseWorkspace({
                               <div>
 
                                 <h3>
-                                  {
-                                    lead.label
-                                  }
+                                  {lead.label}
                                 </h3>
 
                                 <p>
-                                  {lead.reasons?.[0] ||
-                                    'Peripheral Node'}
+                                  {lead
+                                    .reasons?.[0] ||
+                                    'Priority entity'}
                                 </p>
 
                               </div>
 
                               <strong className="secondary-lead-score">
-                                {
-                                  Number(
-                                    lead.score
-                                  ) || 0
-                                }
+                                {Number(
+                                  lead.score
+                                ) || 0}
                               </strong>
 
                             </div>
@@ -1375,25 +1258,24 @@ function CaseWorkspace({
                             <div className="secondary-lead-bottom">
 
                               <span>
-                                ↄ{' '}
-                                {
-                                  (
-                                    lead.reasons ||
-                                    []
-                                  ).length
-                                } Signals
+                                ◉{' '}
+                                {(
+                                  lead.reasons ||
+                                  []
+                                ).length}{' '}
+                                Signals
                               </span>
 
                               <button
                                 type="button"
-                                onClick={(
-                                  event
-                                ) => {
+                                onClick={(event) => {
+
                                   event.stopPropagation();
 
                                   handleViewWhy(
                                     lead
                                   );
+
                                 }}
                               >
                                 INSPECT
@@ -1414,38 +1296,101 @@ function CaseWorkspace({
             </>
           )}
 
-      </section>
-      )}
-
-
-      {/* =================================================
-          EVIDENCE
-          ================================================= */}
-
-      {activeTab === 'evidence' && (
-        <Evidence />
+        </section>
       )}
 
 
       {/* =================================================
           NETWORK
-          ================================================= */}
+      ================================================== */}
 
       {activeTab === 'network' && (
-  <section className="standalone-network-section">
+        <section className="workspace-module">
 
-    <NetworkGraph
-      caseId={caseId}
-      selectedLead={networkLead}
-    />
+          <div className="network-focus-bar">
 
-  </section>
-)}
+            <div className="network-focus-heading">
+
+              <span className="network-focus-label">
+                NETWORK FOCUS
+              </span>
+
+              <strong className="network-focus-name">
+                {networkLead?.label ||
+                  leads[0]?.label ||
+                  'Primary Entity'}
+              </strong>
+
+            </div>
+
+            <small>
+              Select a lead from Priority Leads
+              to change the network focus.
+            </small>
+
+          </div>
+
+
+          {isAnalyzed &&
+          leads.length > 0 ? (
+
+            <NetworkGraph
+              caseId={caseId}
+              selectedLead={
+                networkLead
+              }
+            />
+
+          ) : (
+
+            <div className="priority-empty-state">
+
+              <h2>
+                Network unavailable
+              </h2>
+
+              <p>
+                Analyze the investigation first
+                to generate network intelligence.
+              </p>
+
+              <button
+                type="button"
+                className="priority-analyze-button"
+                onClick={handleAnalyze}
+                disabled={analyzing}
+              >
+                {analyzing
+                  ? 'Analyzing...'
+                  : 'Analyze Case →'}
+              </button>
+
+            </div>
+          )}
+
+        </section>
+      )}
 
 
       {/* =================================================
-          LEAD EXPLANATION
-          ================================================= */}
+          REPORTS
+      ================================================== */}
+
+      {activeTab === 'reports' && (
+        <section className="workspace-module">
+
+          <InvestigationIntel
+            caseId={caseId}
+            defaultTab="report"
+          />
+
+        </section>
+      )}
+
+
+      {/* =================================================
+          LEAD EXPLANATION MODAL
+      ================================================== */}
 
       {selectedLead && (
         <LeadExplanation

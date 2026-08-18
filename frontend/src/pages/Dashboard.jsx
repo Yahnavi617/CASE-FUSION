@@ -6,10 +6,21 @@ function Dashboard({
   onNewInvestigation,
   onOpenInvestigations,
   onOpenCase,
+  onOpenAlerts,
+  onOpenReports,
+  onOpenSettings,
+  onOpenTemplates,
+  onOpenPersonnel,
+  onOpenEntities,
 }) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  /* ==========================================
+     LOAD CASES
+     ========================================== */
 
   async function loadCases() {
     try {
@@ -20,13 +31,20 @@ function Dashboard({
 
       const list = Array.isArray(data)
         ? data
-        : data?.cases || data?.data || [];
+        : data?.cases ||
+          data?.data ||
+          [];
 
       setCases(list);
     } catch (err) {
-      console.error('Failed to load investigations:', err);
+      console.error(
+        'Failed to load investigations:',
+        err
+      );
+
       setError(
-        err.message || 'Failed to load investigations.'
+        err.message ||
+          'Failed to load investigations.'
       );
     } finally {
       setLoading(false);
@@ -37,12 +55,19 @@ function Dashboard({
     loadCases();
   }, []);
 
+
+  /* ==========================================
+     DASHBOARD STATS
+     ========================================== */
+
   const dashboardStats = useMemo(() => {
     const total = cases.length;
 
     const analyzed = cases.filter((item) => {
       const status = String(
-        item.status || item.caseStatus || ''
+        item.status ||
+          item.caseStatus ||
+          ''
       ).toLowerCase();
 
       return (
@@ -52,26 +77,37 @@ function Dashboard({
       );
     }).length;
 
-    const priorityLeads = cases.reduce(
-      (totalLeads, item) => {
-        const leads =
-          item.leads ||
-          item.priorityLeads ||
-          item.leadCount ||
-          [];
 
-        if (Array.isArray(leads)) {
-          return totalLeads + leads.length;
-        }
+    const priorityLeads =
+      cases.reduce(
+        (totalLeads, item) => {
+          const leads =
+            item.leads ||
+            item.priorityLeads ||
+            item.leadCount ||
+            [];
 
-        if (typeof leads === 'number') {
-          return totalLeads + leads;
-        }
+          if (Array.isArray(leads)) {
+            return (
+              totalLeads +
+              leads.length
+            );
+          }
 
-        return totalLeads;
-      },
-      0
-    );
+          if (
+            typeof leads === 'number'
+          ) {
+            return (
+              totalLeads +
+              leads
+            );
+          }
+
+          return totalLeads;
+        },
+        0
+      );
+
 
     return {
       total,
@@ -80,9 +116,19 @@ function Dashboard({
     };
   }, [cases]);
 
+
+  /* ==========================================
+     RECENT CASES
+     ========================================== */
+
   const recentCases = useMemo(() => {
     return cases.slice(0, 5);
   }, [cases]);
+
+
+  /* ==========================================
+     HELPERS
+     ========================================== */
 
   const formatDate = (value) => {
     if (!value) {
@@ -91,16 +137,24 @@ function Dashboard({
 
     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) {
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
       return value;
     }
 
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return date.toLocaleDateString(
+      'en-US',
+      {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }
+    );
   };
+
 
   const getCaseName = (item) => {
     return (
@@ -111,6 +165,7 @@ function Dashboard({
     );
   };
 
+
   const getCaseId = (item) => {
     return (
       item.caseId ||
@@ -120,6 +175,7 @@ function Dashboard({
     );
   };
 
+
   const getStatus = (item) => {
     return (
       item.status ||
@@ -128,22 +184,28 @@ function Dashboard({
     );
   };
 
+
   const getLeadCount = (item) => {
     const leads =
       item.leads ||
       item.priorityLeads ||
       item.leadCount;
 
-    if (Array.isArray(leads)) {
+    if (
+      Array.isArray(leads)
+    ) {
       return leads.length;
     }
 
-    if (typeof leads === 'number') {
+    if (
+      typeof leads === 'number'
+    ) {
       return leads;
     }
 
     return 0;
   };
+
 
   const getRisk = (item) => {
     const risk =
@@ -159,6 +221,7 @@ function Dashboard({
     return String(risk);
   };
 
+
   const getLastUpdated = (item) => {
     return (
       item.updatedAt ||
@@ -168,8 +231,12 @@ function Dashboard({
     );
   };
 
-  const getStatusClass = (status) => {
-    const value = String(status).toLowerCase();
+
+  const getStatusClass = (
+    status
+  ) => {
+    const value =
+      String(status).toLowerCase();
 
     if (
       value.includes('analy')
@@ -186,159 +253,461 @@ function Dashboard({
     return 'cf-status-uploaded';
   };
 
-  const getRiskClass = (risk) => {
-    const value = String(risk).toLowerCase();
 
-    if (value.includes('high')) {
+  const getRiskClass = (
+    risk
+  ) => {
+    const value =
+      String(risk).toLowerCase();
+
+    if (
+      value.includes('high')
+    ) {
       return 'cf-risk-high';
     }
 
-    if (value.includes('medium')) {
+    if (
+      value.includes('medium')
+    ) {
       return 'cf-risk-medium';
     }
 
     return 'cf-risk-low';
   };
 
+
+  /* ==========================================
+     STAT CARD ACTIONS
+     ========================================== */
+
+  const handleStatCardClick = (
+    type
+  ) => {
+
+    if (
+      type === 'active' ||
+      type === 'review'
+    ) {
+      setSidebarOpen(false);
+
+      onOpenInvestigations?.();
+
+      return;
+    }
+
+
+    if (
+      type === 'leads'
+    ) {
+
+      document
+        .getElementById(
+          'cf-recent-investigations'
+        )
+        ?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+
+      return;
+    }
+
+
+    if (
+      type === 'alerts'
+    ) {
+
+      setSidebarOpen(false);
+
+      onOpenAlerts?.();
+    }
+  };
+
+
+  /* ==========================================
+     RENDER
+     ========================================== */
+
   return (
     <div className="cf-dashboard">
 
-      {/* =========================
-          SIDEBAR
-      ========================== */}
+      {/* =====================================
+          MOBILE / SLIDE SIDEBAR
+      ====================================== */}
 
-      <aside className="cf-sidebar">
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="cf-sidebar-overlay"
+          aria-label="Close navigation menu"
+          onClick={() =>
+            setSidebarOpen(false)
+          }
+        />
+      )}
 
-        <div className="cf-brand">
-          <div className="cf-brand-icon">
-            <span>♜</span>
-          </div>
 
-          <div>
-            <div className="cf-brand-name">
-              CASEFUSION
-            </div>
+      <aside
+        className={`cf-sidebar ${
+          sidebarOpen
+            ? 'cf-sidebar-open'
+            : ''
+        }`}
+      >
 
-            <div className="cf-brand-subtitle">
-              Investigative Intel
-            </div>
-          </div>
-        </div>
+        <button
+          type="button"
+          className="cf-sidebar-close"
+          aria-label="Close navigation menu"
+          onClick={() =>
+            setSidebarOpen(false)
+          }
+        >
+          ×
+        </button>
+
+
+        {/* NEW INVESTIGATION */}
 
         <button
           type="button"
           className="cf-new-investigation"
-          onClick={onNewInvestigation}
+          onClick={() => {
+
+            setSidebarOpen(false);
+
+            onNewInvestigation?.();
+
+          }}
         >
-          <span className="cf-plus">＋</span>
-          <span>New Investigation</span>
+
+          <span className="cf-plus">
+            ＋
+          </span>
+
+          <span>
+            New Investigation
+          </span>
+
         </button>
 
+
+        {/* SIDEBAR NAVIGATION */}
+
         <nav className="cf-sidebar-nav">
+
+          {/* HOME */}
 
           <button
             type="button"
             className="cf-nav-item cf-nav-active"
+            onClick={() =>
+              setSidebarOpen(false)
+            }
           >
-            <span className="cf-nav-icon">⌂</span>
-            <span>Home</span>
+
+            <span className="cf-nav-icon">
+              ⌂
+            </span>
+
+            <span>
+              Home
+            </span>
+
           </button>
 
-          <button
-  type="button"
-  className="cf-nav-item"
-  onClick={onOpenInvestigations}
->
-  <span className="cf-nav-icon">▣</span>
-  <span>Cases</span>
-</button>
+
+          {/* CASES */}
 
           <button
             type="button"
             className="cf-nav-item"
+            onClick={() => {
+
+              setSidebarOpen(false);
+
+              onOpenInvestigations?.();
+
+            }}
           >
-            <span className="cf-nav-icon">⌘</span>
-            <span>Visualizer</span>
+
+            <span className="cf-nav-icon">
+              ▣
+            </span>
+
+            <span>
+              Cases
+            </span>
+
           </button>
+
+
+          {/* ==================================
+              NEW: ENTITIES
+          =================================== */}
 
           <button
             type="button"
             className="cf-nav-item"
+            onClick={() => {
+
+              setSidebarOpen(false);
+
+              onOpenEntities?.();
+
+            }}
           >
-            <span className="cf-nav-icon">▥</span>
-            <span>Reports</span>
+
+            <span className="cf-nav-icon">
+              ◉
+            </span>
+
+            <span>
+              Entities
+            </span>
+
           </button>
+
+
+          {/* VISUALIZER */}
 
           <button
             type="button"
             className="cf-nav-item"
+            onClick={() =>
+              setSidebarOpen(false)
+            }
           >
-            <span className="cf-nav-icon">♧</span>
-            <span>Personnel</span>
+
+            <span className="cf-nav-icon">
+              ⌘
+            </span>
+
+            <span>
+              Visualizer
+            </span>
+
           </button>
+
+
+          {/* ALERTS */}
 
           <button
             type="button"
             className="cf-nav-item"
+            onClick={() => {
+
+              setSidebarOpen(false);
+
+              onOpenAlerts?.();
+
+            }}
           >
-            <span className="cf-nav-icon">⚙</span>
-            <span>Settings</span>
+
+            <span className="cf-nav-icon">
+              △
+            </span>
+
+            <span>
+              Alerts
+            </span>
+
+          </button>
+
+
+          {/* REPORTS */}
+
+          <button
+            type="button"
+            className="cf-nav-item"
+            onClick={() => {
+
+              setSidebarOpen(false);
+
+              onOpenReports?.();
+
+            }}
+          >
+
+            <span className="cf-nav-icon">
+              ▥
+            </span>
+
+            <span>
+              Reports
+            </span>
+
+          </button>
+
+
+          {/* PERSONNEL */}
+
+          <button
+            type="button"
+            className="cf-nav-item"
+            onClick={() => {
+
+              setSidebarOpen(false);
+
+              onOpenPersonnel?.();
+
+            }}
+          >
+
+            <span className="cf-nav-icon">
+              ♧
+            </span>
+
+            <span>
+              Personnel
+            </span>
+
+          </button>
+
+
+          {/* SETTINGS */}
+
+          <button
+            type="button"
+            className="cf-nav-item"
+            onClick={() => {
+
+              setSidebarOpen(false);
+
+              onOpenSettings?.();
+
+            }}
+          >
+
+            <span className="cf-nav-icon">
+              ⚙
+            </span>
+
+            <span>
+              Settings
+            </span>
+
+          </button>
+
+
+          {/* =================================
+              TEMPLATES
+          ================================== */}
+
+          <button
+            type="button"
+            className="cf-nav-item"
+            onClick={() => {
+
+              setSidebarOpen(false);
+
+              onOpenTemplates?.();
+
+            }}
+          >
+
+            <span className="cf-nav-icon">
+              ▤
+            </span>
+
+            <span>
+              Templates
+            </span>
+
           </button>
 
         </nav>
 
-        <div className="cf-sidebar-profile">
-          <div className="cf-profile-icon">
-            ♙
-          </div>
-
-          <div>
-            <div className="cf-profile-title">
-              Investigator Profile
-            </div>
-          </div>
-        </div>
-
       </aside>
 
 
-      {/* =========================
+      {/* =====================================
           MAIN AREA
-      ========================== */}
+      ====================================== */}
 
       <main className="cf-main">
 
-        {/* TOP NAVIGATION */}
+
+        {/* TOP BAR */}
 
         <header className="cf-topbar">
 
-          <nav className="cf-top-tabs">
+          <div className="cf-topbar-left">
 
-            <button className="cf-top-tab cf-top-tab-active">
-              Overview
+            {/* HAMBURGER */}
+
+            <button
+              type="button"
+              className="cf-hamburger-button"
+              aria-label="Open navigation menu"
+              aria-expanded={
+                sidebarOpen
+              }
+              onClick={() =>
+                setSidebarOpen(true)
+              }
+            >
+
+              <span />
+              <span />
+              <span />
+
             </button>
 
-            <button className="cf-top-tab">
-              Evidence
-            </button>
 
-            <button className="cf-top-tab">
-              Leads
-            </button>
+            {/* TOP NAV */}
 
-            <button className="cf-top-tab">
-              Network
-            </button>
+            <nav className="cf-top-tabs">
 
-            <button className="cf-top-tab">
-              Reports
-            </button>
+              <button
+                type="button"
+                className="cf-top-tab cf-top-tab-active"
+              >
+                Overview
+              </button>
 
-          </nav>
+              <button
+                type="button"
+                className="cf-top-tab"
+              >
+                Evidence
+              </button>
+
+              <button
+                type="button"
+                className="cf-top-tab"
+              >
+                Leads
+              </button>
+
+              <button
+                type="button"
+                className="cf-top-tab"
+              >
+                Network
+              </button>
+
+              <button
+                type="button"
+                className="cf-top-tab"
+                onClick={() =>
+                  onOpenReports?.()
+                }
+              >
+                Reports
+              </button>
+
+            </nav>
+
+          </div>
+
+
+          {/* SEARCH */}
 
           <div className="cf-top-actions">
 
             <div className="cf-search">
+
               <span className="cf-search-icon">
                 ⌕
               </span>
@@ -347,26 +716,7 @@ function Dashboard({
                 type="text"
                 placeholder="Search entity, ID, or keyword..."
               />
-            </div>
 
-            <button
-              type="button"
-              className="cf-icon-button"
-              title="Notifications"
-            >
-              ♧
-            </button>
-
-            <button
-              type="button"
-              className="cf-icon-button"
-              title="Help"
-            >
-              ?
-            </button>
-
-            <div className="cf-user-avatar">
-              I
             </div>
 
           </div>
@@ -374,9 +724,14 @@ function Dashboard({
         </header>
 
 
-        {/* PAGE CONTENT */}
+        {/* =====================================
+            CONTENT
+        ====================================== */}
 
         <section className="cf-content">
+
+
+          {/* PAGE HEADING */}
 
           <div className="cf-page-heading">
 
@@ -386,29 +741,42 @@ function Dashboard({
 
             <p>
               Monitor active investigations,
-              high-priority leads and critical
-              intelligence signals.
+              high-priority leads and
+              critical intelligence signals.
             </p>
 
           </div>
 
 
-          {/* =========================
+          {/* ===================================
               STAT CARDS
-          ========================== */}
+          ==================================== */}
 
           <div className="cf-stat-grid">
 
-            <div className="cf-stat-card">
+
+            {/* ACTIVE */}
+
+            <button
+              type="button"
+              className="cf-stat-card cf-stat-active"
+              onClick={() =>
+                handleStatCardClick(
+                  'active'
+                )
+              }
+            >
 
               <div className="cf-stat-top">
+
                 <span>
                   ACTIVE INVESTIGATIONS
                 </span>
 
-                <div className="cf-stat-icon cf-icon-purple">
+                <div className="cf-stat-icon cf-icon-green">
                   ◫
                 </div>
+
               </div>
 
               <strong>
@@ -417,19 +785,35 @@ function Dashboard({
                   : dashboardStats.total}
               </strong>
 
-            </div>
+              <span className="cf-stat-hint">
+                Open investigations →
+              </span>
+
+            </button>
 
 
-            <div className="cf-stat-card">
+            {/* REVIEW */}
+
+            <button
+              type="button"
+              className="cf-stat-card cf-stat-review"
+              onClick={() =>
+                handleStatCardClick(
+                  'review'
+                )
+              }
+            >
 
               <div className="cf-stat-top">
+
                 <span>
                   REQUIRES REVIEW
                 </span>
 
-                <div className="cf-stat-icon cf-icon-gold">
+                <div className="cf-stat-icon cf-icon-yellow">
                   ▣
                 </div>
+
               </div>
 
               <strong>
@@ -442,19 +826,35 @@ function Dashboard({
                     )}
               </strong>
 
-            </div>
+              <span className="cf-stat-hint">
+                Review cases →
+              </span>
+
+            </button>
 
 
-            <div className="cf-stat-card">
+            {/* LEADS */}
+
+            <button
+              type="button"
+              className="cf-stat-card cf-stat-leads"
+              onClick={() =>
+                handleStatCardClick(
+                  'leads'
+                )
+              }
+            >
 
               <div className="cf-stat-top">
+
                 <span>
                   PRIORITY LEADS
                 </span>
 
-                <div className="cf-stat-icon cf-icon-orange">
+                <div className="cf-stat-icon cf-icon-cyan">
                   ◎
                 </div>
+
               </div>
 
               <strong>
@@ -463,12 +863,27 @@ function Dashboard({
                   : dashboardStats.priorityLeads}
               </strong>
 
-            </div>
+              <span className="cf-stat-hint">
+                View lead activity →
+              </span>
+
+            </button>
 
 
-            <div className="cf-stat-card">
+            {/* ALERTS */}
+
+            <button
+              type="button"
+              className="cf-stat-card cf-stat-critical"
+              onClick={() =>
+                handleStatCardClick(
+                  'alerts'
+                )
+              }
+            >
 
               <div className="cf-stat-top">
+
                 <span>
                   CRITICAL ALERTS
                 </span>
@@ -476,26 +891,37 @@ function Dashboard({
                 <div className="cf-stat-icon cf-icon-red">
                   △
                 </div>
+
               </div>
 
               <strong>
                 2
               </strong>
 
-            </div>
+              <span className="cf-stat-hint">
+                View priority alerts →
+              </span>
+
+            </button>
 
           </div>
 
 
-          {/* =========================
-              LOWER DASHBOARD
-          ========================== */}
+          {/* ===================================
+              LOWER GRID
+          ==================================== */}
 
           <div className="cf-dashboard-grid">
 
-            {/* RECENT INVESTIGATIONS */}
 
-            <section className="cf-panel cf-investigations-panel">
+            {/* =================================
+                RECENT INVESTIGATIONS
+            ================================== */}
+
+            <section
+              id="cf-recent-investigations"
+              className="cf-panel cf-investigations-panel"
+            >
 
               <div className="cf-panel-header">
 
@@ -504,169 +930,271 @@ function Dashboard({
                 </h2>
 
                 <button
-  type="button"
-  className="cf-view-all"
-  onClick={onOpenInvestigations}
->
-  VIEW ALL
-  <span>→</span>
-</button>
+                  type="button"
+                  className="cf-view-all"
+                  onClick={
+                    onOpenInvestigations
+                  }
+                >
+
+                  VIEW ALL
+
+                  <span>
+                    →
+                  </span>
+
+                </button>
 
               </div>
 
+
+              {/* TABLE */}
 
               <div className="cf-table-wrapper">
 
                 <table className="cf-table">
 
                   <thead>
+
                     <tr>
-                      <th>Case</th>
-                      <th>Case ID</th>
-                      <th>Status</th>
-                      <th>Risk</th>
-                      <th>Leads</th>
-                      <th>Last Updated</th>
-                      <th>Action</th>
+
+                      <th>
+                        Case
+                      </th>
+
+                      <th>
+                        Case ID
+                      </th>
+
+                      <th>
+                        Status
+                      </th>
+
+                      <th>
+                        Risk
+                      </th>
+
+                      <th>
+                        Leads
+                      </th>
+
+                      <th>
+                        Last Updated
+                      </th>
+
+                      <th>
+                        Action
+                      </th>
+
                     </tr>
+
                   </thead>
+
 
                   <tbody>
 
+                    {/* LOADING */}
+
                     {loading && (
+
                       <tr>
+
                         <td
                           colSpan="7"
                           className="cf-table-message"
                         >
                           Loading investigations...
                         </td>
+
                       </tr>
+
                     )}
 
-                    {!loading && error && (
-                      <tr>
-                        <td
-                          colSpan="7"
-                          className="cf-table-message cf-table-error"
-                        >
-                          {error}
-                        </td>
-                      </tr>
-                    )}
+
+                    {/* ERROR */}
+
+                    {!loading &&
+                      error && (
+
+                        <tr>
+
+                          <td
+                            colSpan="7"
+                            className="cf-table-message cf-table-error"
+                          >
+                            {error}
+                          </td>
+
+                        </tr>
+
+                      )}
+
+
+                    {/* EMPTY */}
 
                     {!loading &&
                       !error &&
                       recentCases.length === 0 && (
+
                         <tr>
+
                           <td
                             colSpan="7"
                             className="cf-table-message"
                           >
                             No investigations yet.
                           </td>
+
                         </tr>
+
                       )}
+
+
+                    {/* CASES */}
 
                     {!loading &&
                       !error &&
-                      recentCases.map((item, index) => {
+                      recentCases.map(
+                        (
+                          item,
+                          index
+                        ) => {
 
-                        const status =
-                          getStatus(item);
+                          const status =
+                            getStatus(
+                              item
+                            );
 
-                        const risk =
-                          getRisk(item);
+                          const risk =
+                            getRisk(
+                              item
+                            );
 
-                        return (
-                          <tr
-                            key={
-                              getCaseId(item) ||
-                              index
-                            }
-                          >
+                          const caseId =
+                            getCaseId(
+                              item
+                            );
 
-                            <td>
-                              <div className="cf-case-name">
+                          return (
 
-                                <span
-                                  className={
-                                    index === 0
-                                      ? 'cf-case-dot cf-dot-active'
-                                      : 'cf-case-dot'
-                                  }
-                                />
+                            <tr
+                              key={
+                                caseId ||
+                                index
+                              }
+                            >
 
-                                <span>
-                                  {getCaseName(item)}
+                              <td>
+
+                                <div className="cf-case-name">
+
+                                  <span
+                                    className={
+                                      index === 0
+                                        ? 'cf-case-dot cf-dot-active'
+                                        : 'cf-case-dot'
+                                    }
+                                  />
+
+                                  <span>
+                                    {
+                                      getCaseName(
+                                        item
+                                      )
+                                    }
+                                  </span>
+
+                                </div>
+
+                              </td>
+
+
+                              <td>
+
+                                <span className="cf-case-id">
+                                  {caseId}
                                 </span>
 
-                              </div>
-                            </td>
+                              </td>
 
 
-                            <td>
-                              <span className="cf-case-id">
-                                {getCaseId(item)}
-                              </span>
-                            </td>
+                              <td>
+
+                                <span
+                                  className={`cf-badge ${getStatusClass(
+                                    status
+                                  )}`}
+                                >
+                                  {status}
+                                </span>
+
+                              </td>
 
 
-                            <td>
-                              <span
-                                className={`cf-badge ${getStatusClass(
-                                  status
-                                )}`}
-                              >
-                                {status}
-                              </span>
-                            </td>
+                              <td>
+
+                                <span
+                                  className={`cf-badge ${getRiskClass(
+                                    risk
+                                  )}`}
+                                >
+                                  {risk}
+                                </span>
+
+                              </td>
 
 
-                            <td>
-                              <span
-                                className={`cf-badge ${getRiskClass(
-                                  risk
-                                )}`}
-                              >
-                                {risk}
-                              </span>
-                            </td>
+                              <td>
+                                {
+                                  getLeadCount(
+                                    item
+                                  )
+                                }
+                              </td>
 
 
-                            <td>
-                              {getLeadCount(item)}
-                            </td>
+                              <td>
+                                {
+                                  formatDate(
+                                    getLastUpdated(
+                                      item
+                                    )
+                                  )
+                                }
+                              </td>
 
 
-                            <td>
-                              {formatDate(
-                                getLastUpdated(item)
-                              )}
-                            </td>
+                              <td>
 
+                                <button
+                                  type="button"
+                                  className="cf-action-button"
+                                  onClick={() => {
 
-                            <td>
-  <button
-    type="button"
-    className="cf-action-button"
-    onClick={() => {
-      const caseId = getCaseId(item);
+                                    if (
+                                      caseId &&
+                                      caseId !== '—'
+                                    ) {
 
-      console.log('Opening case:', caseId);
+                                      onOpenCase?.(
+                                        caseId
+                                      );
 
-      if (caseId && caseId !== '—') {
-        onOpenCase?.(caseId);
-      }
-    }}
-  >
-    Open
-  </button>
-</td>
+                                    }
 
-                          </tr>
-                        );
-                      })}
+                                  }}
+                                >
+                                  Open
+                                </button>
+
+                              </td>
+
+                            </tr>
+
+                          );
+
+                        }
+                      )}
 
                   </tbody>
 
@@ -677,29 +1205,60 @@ function Dashboard({
             </section>
 
 
-            {/* RIGHT COLUMN */}
+            {/* =================================
+                RIGHT COLUMN
+            ================================== */}
 
             <div className="cf-right-column">
 
 
               {/* PRIORITY ALERTS */}
 
-              <section className="cf-panel cf-alert-panel">
+              <section
+                id="cf-priority-alerts"
+                className="cf-panel cf-alert-panel"
+                onClick={() =>
+                  onOpenAlerts?.()
+                }
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+
+                  if (
+                    event.key ===
+                      'Enter' ||
+                    event.key ===
+                      ' '
+                  ) {
+
+                    event.preventDefault();
+
+                    onOpenAlerts?.();
+
+                  }
+
+                }}
+              >
 
                 <div className="cf-panel-header">
 
                   <h2>
+
                     <span className="cf-alert-title-icon">
                       △
                     </span>
 
                     Priority Alerts
+
                   </h2>
 
                 </div>
 
 
                 <div className="cf-alert-list">
+
+
+                  {/* HIGH */}
 
                   <div className="cf-alert cf-alert-high">
 
@@ -716,8 +1275,8 @@ function Dashboard({
                     </div>
 
                     <strong>
-                      Call followed by large fund
-                      transfer
+                      Call followed by large
+                      fund transfer
                     </strong>
 
                     <span className="cf-alert-case">
@@ -726,6 +1285,8 @@ function Dashboard({
 
                   </div>
 
+
+                  {/* MEDIUM */}
 
                   <div className="cf-alert cf-alert-medium">
 
@@ -742,7 +1303,8 @@ function Dashboard({
                     </div>
 
                     <strong>
-                      Unusual login location detected
+                      Unusual login location
+                      detected
                     </strong>
 
                     <span className="cf-alert-case">
@@ -756,18 +1318,22 @@ function Dashboard({
               </section>
 
 
-              {/* RECENT ACTIVITY */}
+              {/* =================================
+                  RECENT ACTIVITY
+              ================================== */}
 
               <section className="cf-panel cf-activity-panel">
 
                 <div className="cf-panel-header">
 
                   <h2>
+
                     <span className="cf-activity-icon">
                       ◷
                     </span>
 
                     Recent Activity
+
                   </h2>
 
                 </div>
@@ -775,11 +1341,13 @@ function Dashboard({
 
                 <div className="cf-activity-list">
 
+
                   <div className="cf-activity-item">
 
                     <span className="cf-activity-dot cf-activity-active" />
 
                     <div>
+
                       <strong>
                         Investigation analyzed
                       </strong>
@@ -787,6 +1355,7 @@ function Dashboard({
                       <span>
                         Case: Loot • 10 mins ago
                       </span>
+
                     </div>
 
                   </div>
@@ -797,6 +1366,7 @@ function Dashboard({
                     <span className="cf-activity-dot" />
 
                     <div>
+
                       <strong>
                         Lead score updated
                       </strong>
@@ -804,6 +1374,7 @@ function Dashboard({
                       <span>
                         Entity: John Doe • 1 hr ago
                       </span>
+
                     </div>
 
                   </div>
@@ -814,6 +1385,7 @@ function Dashboard({
                     <span className="cf-activity-dot" />
 
                     <div>
+
                       <strong>
                         Document parsed and indexed
                       </strong>
@@ -821,13 +1393,60 @@ function Dashboard({
                       <span>
                         Source: DarkWeb • 3 hrs ago
                       </span>
+
                     </div>
 
                   </div>
 
+
                 </div>
 
               </section>
+
+
+              {/* =================================
+                  TEMPLATES QUICK CARD
+              ================================== */}
+
+              <section
+                className="cf-panel cf-template-quick-card"
+              >
+
+                <div className="cf-panel-header">
+
+                  <h2>
+                    Case Templates
+                  </h2>
+
+                  <button
+                    type="button"
+                    className="cf-view-all"
+                    onClick={
+                      onOpenTemplates
+                    }
+                  >
+                    VIEW ALL →
+                  </button>
+
+                </div>
+
+                <p className="cf-template-description">
+                  Use standardized investigation
+                  workflows and data schemas.
+                </p>
+
+                <button
+                  type="button"
+                  className="cf-template-button"
+                  onClick={
+                    onOpenTemplates
+                  }
+                >
+                  Open Case Templates
+                </button>
+
+              </section>
+
 
             </div>
 

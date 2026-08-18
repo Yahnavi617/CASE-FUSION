@@ -9912,3 +9912,548 @@
     min-width: 900px;
   }
 }
+/* =========================================================
+   GLOBAL THEME TOGGLE
+   ========================================================= */
+
+.theme-toggle-button {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #293248;
+  border-radius: 8px;
+
+  background: #111722;
+  color: #c9b9ff;
+
+  cursor: pointer;
+
+  font-size: 18px;
+  line-height: 1;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.theme-toggle-button:hover {
+  background: #1a2130;
+  border-color: #8f7cff;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.theme-toggle-button:active {
+  transform: translateY(0);
+}
+
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+body.light-theme {
+  background: #f4f6fb;
+  color: #182033;
+}
+
+
+/* Main application shell */
+
+body.light-theme .casefusion-app-shell {
+  background: #f4f6fb;
+  color: #182033;
+}
+
+
+/* Global top header */
+
+body.light-theme .global-header {
+  background: #ffffff;
+  border-color: #dce1eb;
+  color: #182033;
+}
+
+
+/* Main area */
+
+body.light-theme .global-main {
+  background: #f4f6fb;
+  color: #182033;
+}
+
+
+/* Theme button */
+
+body.light-theme .theme-toggle-button {
+  background: #f1f3f8;
+  border-color: #cbd2df;
+  color: #4f3fb8;
+}
+
+body.light-theme .theme-toggle-button:hover {
+  background: #e7eaf2;
+  border-color: #7c68e8;
+  color: #34258f;
+}
+
+
+/* Global user area */
+
+body.light-theme .global-user-info strong {
+  color: #182033;
+}
+
+body.light-theme .global-user-info span {
+  color: #667085;
+}
+
+
+/* =========================================================
+   COMMON LIGHT THEME SURFACES
+   ========================================================= */
+
+body.light-theme .page-header,
+body.light-theme .form-section,
+body.light-theme .upload-card,
+body.light-theme .case-created-card,
+body.light-theme .investigation-form,
+body.light-theme .upload-progress-info {
+  color: #182033;
+}
+
+
+/* Inputs */
+
+body.light-theme input,
+body.light-theme textarea,
+body.light-theme select {
+  background: #ffffff;
+  color: #182033;
+  border-color: #cbd2df;
+}
+
+body.light-theme input::placeholder,
+body.light-theme textarea::placeholder {
+  color: #8a94a6;
+}
+
+
+/* Buttons */
+
+body.light-theme .cancel-button {
+  background: #ffffff;
+  color: #344054;
+  border-color: #cbd2df;
+}
+
+body.light-theme .cancel-button:hover {
+  background: #f1f3f8;
+}
+/* =========================================================
+   THEME TOGGLE
+   ========================================================= */
+
+.theme-toggle-button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #5d55a8;
+  border-radius: 10px;
+  background: #15192a;
+  color: #c9c1ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.theme-toggle-button:hover {
+  background: #20243a;
+  border-color: #8f86e8;
+}
+
+
+/* =========================================================
+   PROFILE WRAPPER
+   ========================================================= */
+
+.global-profile-wrapper {
+  position: relative;
+}
+
+.global-avatar-button {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #393b72;
+  border-radius: 50%;
+  background: #11152a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.global-avatar-button:hover {
+  border-color: #9b91ff;
+}
+
+.global-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #151936;
+  color: #ddd8ff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   PROFILE DROPDOWN
+   ========================================================= */
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 260px;
+  padding: 14px;
+  background: #101522;
+  border: 1px solid #30384d;
+  border-radius: 10px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+}
+
+.profile-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-dropdown-avatar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #171b35;
+  border: 1px solid #5951a3;
+  color: #cfc7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.profile-dropdown-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-dropdown-info strong {
+  color: #f1f1f5;
+  font-size: 14px;
+}
+
+.profile-dropdown-info span {
+  color: #8f98ad;
+  font-size: 12px;
+}
+
+.profile-dropdown-divider {
+  height: 1px;
+  background: #293044;
+  margin: 14px 0;
+}
+
+.profile-dropdown-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9da6b8;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.profile-dropdown-status .status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4bd99a;
+  box-shadow: 0 0 8px rgba(75, 217, 154, 0.55);
+}
+
+.profile-logout-button {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #49324a;
+  border-radius: 7px;
+  background: #191521;
+  color: #ff8793;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: center;
+}
+
+.profile-logout-button:hover {
+  background: #251822;
+  border-color: #8d4351;
+}
+
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+html[data-theme='light'] body {
+  background: #f4f6fb;
+  color: #182033;
+}
+
+html[data-theme='light'] .casefusion-app-shell {
+  background: #f4f6fb;
+  color: #182033;
+}
+
+html[data-theme='light'] .global-header {
+  background: #ffffff;
+  border-color: #d9deea;
+}
+
+html[data-theme='light'] .global-brand-text strong {
+  color: #20263a;
+}
+
+html[data-theme='light'] .global-brand-text small {
+  color: #667085;
+}
+
+html[data-theme='light'] .theme-toggle-button {
+  background: #f4f5fa;
+  color: #5148a5;
+  border-color: #aaa3e7;
+}
+
+html[data-theme='light'] .theme-toggle-button:hover {
+  background: #e9e9f8;
+}
+
+html[data-theme='light'] .global-avatar-button {
+  background: #f3f4f9;
+  border-color: #aaa3e7;
+}
+
+html[data-theme='light'] .global-avatar {
+  background: #e8e8f7;
+  color: #5148a5;
+}
+
+html[data-theme='light'] .profile-dropdown {
+  background: #ffffff;
+  border-color: #d6dbe7;
+  box-shadow: 0 18px 45px rgba(30, 40, 70, 0.18);
+}
+
+html[data-theme='light'] .profile-dropdown-avatar {
+  background: #eeeefe;
+  border-color: #aaa3e7;
+  color: #5148a5;
+}
+
+html[data-theme='light'] .profile-dropdown-info strong {
+  color: #20263a;
+}
+
+html[data-theme='light'] .profile-dropdown-info span {
+  color: #687287;
+}
+
+html[data-theme='light'] .profile-dropdown-divider {
+  background: #e1e4eb;
+}
+
+html[data-theme='light'] .profile-dropdown-status {
+  color: #687287;
+}
+
+html[data-theme='light'] .profile-logout-button {
+  background: #fff5f6;
+  border-color: #f0c6cb;
+  color: #c43e4c;
+}
+
+html[data-theme='light'] .profile-logout-button:hover {
+  background: #ffe9eb;
+}
+/* =========================================================
+   HEADER BRAND - READABLE SUBTITLE
+   ========================================================= */
+
+.global-brand {
+  color: inherit;
+}
+
+.global-brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+.global-brand-text strong {
+  display: block;
+  color: #f1f1f5;
+  font-size: 15px;
+  line-height: 1.15;
+  letter-spacing: 0.08em;
+}
+
+.global-brand-text small {
+  display: block;
+  color: #9ca7bb;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+
+/* Light theme */
+html[data-theme='light'] .global-brand-text strong {
+  color: #20263a;
+}
+
+html[data-theme='light'] .global-brand-text small {
+  color: #596579;
+}
+/* =========================================================
+   GLOBAL THEME - FULL PAGE
+   ========================================================= */
+
+html {
+  min-height: 100%;
+}
+
+html body {
+  min-height: 100vh;
+  margin: 0;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body {
+  background: #060a11;
+  color: #f4f7fb;
+}
+
+html[data-theme="light"],
+html[data-theme="light"] body {
+  background: #f4f6fb;
+  color: #182033;
+}
+
+/* Root must follow theme */
+
+html[data-theme="light"] #root {
+  min-height: 100vh;
+  background: #f4f6fb;
+}
+
+html[data-theme="dark"] #root {
+  min-height: 100vh;
+  background: #060a11;
+}
+
+/* Global shell */
+
+html[data-theme="light"] .casefusion-app-shell {
+  background: #f4f6fb;
+  color: #182033;
+  min-height: 100vh;
+}
+
+html[data-theme="dark"] .casefusion-app-shell {
+  background: #060a11;
+  color: #f4f7fb;
+  min-height: 100vh;
+}
+
+/* Global header */
+
+html[data-theme="light"] .global-header {
+  background: #ffffff;
+  border-color: #d9deea;
+  color: #182033;
+}
+
+/* Theme button */
+
+html[data-theme="light"] .theme-toggle-button {
+  background: #f4f5fa;
+  color: #5148a5;
+  border-color: #aaa3e7;
+}
+
+html[data-theme="light"] .theme-toggle-button:hover {
+  background: #e9e9f8;
+  border-color: #7c68e8;
+}
+
+/* Profile */
+
+html[data-theme="light"] .global-avatar-button {
+  background: #f3f4f9;
+  border-color: #aaa3e7;
+}
+
+html[data-theme="light"] .global-avatar {
+  background: #e8e8f7;
+  color: #5148a5;
+}
+
+html[data-theme="light"] .profile-dropdown {
+  background: #ffffff;
+  border-color: #d6dbe7;
+  color: #182033;
+  box-shadow: 0 18px 45px rgba(30, 40, 70, 0.18);
+}
+
+/* Inputs */
+
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+  background: #ffffff;
+  color: #182033;
+  border-color: #cbd2df;
+}
+
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: #8a94a6;
+}
+
+/* Common page containers */
+
+html[data-theme="light"] .global-main,
+html[data-theme="light"] .page,
+html[data-theme="light"] .page-container {
+  background: #f4f6fb;
+  color: #182033;
+}

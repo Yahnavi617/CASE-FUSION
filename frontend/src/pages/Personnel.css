@@ -1,0 +1,1020 @@
+/* =====================================================
+   CASE-FUSION PERSONNEL PAGE
+   ===================================================== */
+
+.personnel-page {
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  background:
+    radial-gradient(
+      circle at 75% 5%,
+      rgba(84, 110, 180, 0.08),
+      transparent 34%
+    ),
+    #070b12;
+
+  color: #edf2ff;
+
+  padding: 0;
+}
+
+
+/* =====================================================
+   CONTENT
+   ===================================================== */
+
+.personnel-content {
+  width: calc(100% - 80px);
+  max-width: none;
+
+  margin: 0 auto;
+
+  padding: 38px 0 80px;
+}
+
+
+/* =====================================================
+   TOP BAR / BACK BUTTON
+   ===================================================== */
+
+.personnel-topbar {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  margin-bottom: 28px;
+}
+
+
+.personnel-back-button {
+  min-width: 130px;
+  height: 44px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 0 18px;
+
+  border: 1px solid #30415a;
+  border-radius: 6px;
+
+  background: #111a28;
+
+  color: #dce6f8;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.personnel-back-button:hover {
+  background: #1a273a;
+
+  border-color: #7185ff;
+
+  color: #ffffff;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 5px 18px rgba(0, 0, 0, 0.25);
+}
+
+
+.personnel-back-button:active {
+  transform: translateY(0);
+}
+
+
+.personnel-back-button:focus-visible {
+  outline: 2px solid #8b7cff;
+
+  outline-offset: 3px;
+}
+
+
+.back-arrow {
+  font-size: 18px;
+
+  line-height: 1;
+}
+
+
+/* =====================================================
+   HEADER
+   ===================================================== */
+
+.personnel-header {
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 32px;
+
+  margin-bottom: 28px;
+}
+
+
+.personnel-title-area {
+  min-width: 0;
+}
+
+
+.personnel-header h1 {
+  margin: 0;
+
+  color: #f6f8ff;
+
+  font-size: 38px;
+
+  line-height: 1.15;
+
+  font-weight: 750;
+
+  letter-spacing: -0.03em;
+}
+
+
+.personnel-title-area p {
+  margin: 8px 0 0;
+
+  color: #8294b1;
+
+  font-size: 15px;
+
+  line-height: 1.5;
+}
+
+
+/* =====================================================
+   HEADER ACTIONS
+   ===================================================== */
+
+.personnel-header-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  flex-shrink: 0;
+}
+
+
+/* =====================================================
+   SEARCH
+   ===================================================== */
+
+.personnel-search {
+  width: 340px;
+
+  height: 46px;
+
+  display: flex;
+
+  align-items: center;
+
+  box-sizing: border-box;
+
+  border: 1px solid #30415a;
+
+  border-radius: 6px;
+
+  background: #111a28;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.personnel-search:focus-within {
+  border-color: #7185ff;
+
+  box-shadow:
+    0 0 0 3px rgba(113, 133, 255, 0.12);
+
+  background: #131e2e;
+}
+
+
+.search-icon {
+  width: 46px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #8ea4c7;
+
+  font-size: 21px;
+}
+
+
+.personnel-search input {
+  flex: 1;
+
+  min-width: 0;
+
+  height: 100%;
+
+  padding: 0 12px 0 0;
+
+  border: 0;
+
+  outline: none;
+
+  background: transparent;
+
+  color: #e9effb;
+
+  font-size: 14px;
+}
+
+
+.personnel-search input::placeholder {
+  color: #8292ac;
+}
+
+
+/* =====================================================
+   FILTER BUTTON
+   ===================================================== */
+
+.filter-button {
+  width: 46px;
+
+  height: 46px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border: 1px solid #30415a;
+
+  border-radius: 6px;
+
+  background: #111a28;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.filter-button:hover {
+  border-color: #7185ff;
+
+  background: #1a273a;
+
+  transform: translateY(-1px);
+}
+
+
+.filter-button.filter-active {
+  border-color: #8b7cff;
+
+  background: #1c1b35;
+}
+
+
+.filter-lines {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+
+  width: 18px;
+}
+
+
+.filter-lines i {
+  display: block;
+
+  height: 2px;
+
+  margin-left: auto;
+
+  background: #9eb0cb;
+
+  border-radius: 2px;
+}
+
+
+.filter-lines i:nth-child(1) {
+  width: 18px;
+}
+
+
+.filter-lines i:nth-child(2) {
+  width: 13px;
+}
+
+
+.filter-lines i:nth-child(3) {
+  width: 8px;
+}
+
+
+/* =====================================================
+   FILTER INFO
+   ===================================================== */
+
+.personnel-filter-info {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 14px;
+
+  padding: 10px 14px;
+
+  border: 1px solid #293a52;
+
+  border-radius: 5px;
+
+  background: #0e1723;
+
+  color: #8ea1bf;
+
+  font-size: 13px;
+}
+
+
+.personnel-filter-info strong {
+  color: #dfe8f7;
+}
+
+
+.personnel-filter-info button {
+  border: 0;
+
+  background: transparent;
+
+  color: #9d91ff;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+.personnel-filter-info button:hover {
+  color: #ffffff;
+}
+
+
+/* =====================================================
+   MAIN TABLE CARD
+   ===================================================== */
+
+.personnel-card {
+  width: 100%;
+
+  overflow: visible;
+
+  border: 1px solid #30415a;
+
+  border-radius: 7px;
+
+  background: #0e1723;
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.22);
+}
+
+
+/* =====================================================
+   TABLE GRID
+   ===================================================== */
+
+.personnel-table-head,
+.personnel-row {
+  display: grid;
+
+  grid-template-columns:
+    minmax(330px, 2fr)
+    minmax(190px, 1.1fr)
+    minmax(150px, 0.8fr)
+    minmax(180px, 1fr)
+    90px;
+
+  padding: 0 22px;
+}
+
+
+/* =====================================================
+   TABLE HEADER
+   ===================================================== */
+
+.personnel-table-head {
+  min-height: 54px;
+
+  align-items: center;
+
+  background: #172131;
+
+  border-bottom: 1px solid #30415a;
+
+  color: #9cafca;
+
+  font-size: 11px;
+
+  font-weight: 650;
+
+  letter-spacing: 0.12em;
+
+  text-transform: uppercase;
+}
+
+
+/* =====================================================
+   TABLE ROW
+   ===================================================== */
+
+.personnel-row {
+  position: relative;
+
+  min-height: 88px;
+
+  align-items: center;
+
+  background: #0e1723;
+
+  border-bottom: 1px solid #29384d;
+
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.personnel-row:last-child {
+  border-bottom: 0;
+}
+
+
+.personnel-row:hover {
+  background: #142033;
+
+  box-shadow:
+    inset 4px 0 0 #7485ff;
+}
+
+
+/* =====================================================
+   NAME
+   ===================================================== */
+
+.personnel-name-cell {
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  min-width: 0;
+}
+
+
+.personnel-avatar {
+  width: 44px;
+
+  height: 44px;
+
+  flex-shrink: 0;
+
+  display: grid;
+
+  place-items: center;
+
+  border: 1px solid #3a506d;
+
+  border-radius: 5px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #263b55,
+      #172334
+    );
+
+  color: #e5edff;
+
+  font-size: 13px;
+
+  font-weight: 750;
+}
+
+
+.personnel-name-info {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+
+.personnel-name-info strong {
+  color: #f4f7ff;
+
+  font-size: 16px;
+
+  line-height: 1.2;
+
+  font-weight: 700;
+}
+
+
+.personnel-name-info span {
+  color: #8294b1;
+
+  font-size: 12px;
+
+  letter-spacing: 0.04em;
+}
+
+
+/* =====================================================
+   ROLE
+   ===================================================== */
+
+.personnel-role-cell {
+  display: flex;
+
+  align-items: center;
+}
+
+
+.role-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  min-height: 30px;
+
+  padding: 0 12px;
+
+  border: 1px solid #33445d;
+
+  border-radius: 4px;
+
+  background: #172233;
+
+  color: #c5d2e8;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+
+.role-supervisor {
+  color: #dce7ff;
+}
+
+
+.role-investigator {
+  color: #f0bd70;
+
+  border-color: #65502d;
+
+  background: #282217;
+}
+
+
+.role-analyst {
+  color: #b9c8ff;
+}
+
+
+/* =====================================================
+   ACTIVE CASES
+   ===================================================== */
+
+.personnel-cases {
+  color: #f3f6ff;
+
+  font-size: 16px;
+
+  font-weight: 700;
+}
+
+
+/* =====================================================
+   STATUS
+   ===================================================== */
+
+.personnel-status-cell {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+
+.status-indicator {
+  width: 9px;
+
+  height: 9px;
+
+  border-radius: 50%;
+
+  flex-shrink: 0;
+}
+
+
+.status-online {
+  background: #35dfa0;
+
+  box-shadow:
+    0 0 10px rgba(53, 223, 160, 0.5);
+}
+
+
+.status-away {
+  background: #e8af3f;
+
+  box-shadow:
+    0 0 8px rgba(232, 175, 63, 0.35);
+}
+
+
+.status-offline {
+  background: #8c9bb3;
+}
+
+
+.status-text {
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+
+.status-text-online {
+  color: #48dda9;
+}
+
+
+.status-text-away {
+  color: #edbd62;
+}
+
+
+.status-text-offline {
+  color: #9ba9bf;
+}
+
+
+/* =====================================================
+   ACTIONS
+   ===================================================== */
+
+.personnel-actions {
+  position: relative;
+
+  display: flex;
+
+  justify-content: flex-end;
+}
+
+
+.personnel-more {
+  width: 38px;
+
+  height: 38px;
+
+  border: 0;
+
+  border-radius: 4px;
+
+  background: transparent;
+
+  color: #a1aec2;
+
+  font-size: 24px;
+
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.personnel-more:hover {
+  color: #ffffff;
+
+  background: #1b293c;
+}
+
+
+/* =====================================================
+   ACTION MENU
+   ===================================================== */
+
+.personnel-action-menu {
+  position: absolute;
+
+  right: 0;
+
+  top: 44px;
+
+  z-index: 100;
+
+  width: 190px;
+
+  padding: 6px;
+
+  border: 1px solid #3a4d69;
+
+  border-radius: 6px;
+
+  background: #111c2a;
+
+  box-shadow:
+    0 16px 35px rgba(0, 0, 0, 0.5);
+}
+
+
+.personnel-action-menu button {
+  width: 100%;
+
+  padding: 12px;
+
+  border: 0;
+
+  border-radius: 4px;
+
+  background: transparent;
+
+  color: #c5d2e7;
+
+  text-align: left;
+
+  font-size: 13px;
+
+  cursor: pointer;
+}
+
+
+.personnel-action-menu button:hover {
+  background: #1c2b40;
+
+  color: #ffffff;
+}
+
+
+/* =====================================================
+   EMPTY STATE
+   ===================================================== */
+
+.personnel-empty {
+  min-height: 240px;
+
+  display: grid;
+
+  place-items: center;
+
+  text-align: center;
+}
+
+
+.personnel-empty div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+
+.personnel-empty strong {
+  color: #dfe8f7;
+
+  font-size: 16px;
+}
+
+
+.personnel-empty span {
+  color: #8192ad;
+
+  font-size: 13px;
+}
+
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
+
+.personnel-footer {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 16px 4px 0;
+
+  color: #71839f;
+
+  font-size: 12px;
+}
+
+
+/* =====================================================
+   LIGHT THEME
+   ===================================================== */
+
+[data-theme='light'] .personnel-page,
+.theme-light .personnel-page {
+  background: #f4f7fc;
+
+  color: #17233a;
+}
+
+
+[data-theme='light'] .personnel-card,
+.theme-light .personnel-card {
+  border-color: #d7dfeb;
+
+  background: #ffffff;
+}
+
+
+[data-theme='light'] .personnel-table-head,
+.theme-light .personnel-table-head {
+  background: #eef3f9;
+
+  border-color: #d7dfeb;
+
+  color: #687892;
+}
+
+
+[data-theme='light'] .personnel-row,
+.theme-light .personnel-row {
+  background: #ffffff;
+
+  border-color: #e0e6ef;
+}
+
+
+[data-theme='light'] .personnel-row:hover,
+.theme-light .personnel-row:hover {
+  background: #f5f8fd;
+}
+
+
+[data-theme='light'] .personnel-name-info strong,
+.theme-light .personnel-name-info strong {
+  color: #17243a;
+}
+
+
+[data-theme='light'] .personnel-name-info span,
+.theme-light .personnel-name-info span {
+  color: #71809a;
+}
+
+
+[data-theme='light'] .personnel-search,
+.theme-light .personnel-search {
+  background: #ffffff;
+
+  border-color: #d0d9e7;
+}
+
+
+[data-theme='light'] .filter-button,
+.theme-light .filter-button {
+  background: #ffffff;
+
+  border-color: #d0d9e7;
+}
+
+
+[data-theme='light'] .personnel-search input,
+.theme-light .personnel-search input {
+  color: #17243a;
+}
+
+
+[data-theme='light'] .personnel-back-button,
+.theme-light .personnel-back-button {
+  background: #ffffff;
+
+  border-color: #d0d9e7;
+
+  color: #24334b;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1100px) {
+
+  .personnel-content {
+    width: calc(100% - 48px);
+  }
+
+  .personnel-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .personnel-header-actions {
+    width: 100%;
+  }
+
+  .personnel-search {
+    flex: 1;
+
+    width: auto;
+  }
+
+  .personnel-card {
+    overflow-x: auto;
+  }
+
+  .personnel-table-head,
+  .personnel-row {
+    min-width: 1000px;
+  }
+}
+
+
+@media (max-width: 650px) {
+
+  .personnel-content {
+    width: calc(100% - 24px);
+
+    padding-top: 25px;
+  }
+
+  .personnel-header h1 {
+    font-size: 30px;
+  }
+
+  .personnel-title-area p {
+    font-size: 13px;
+  }
+
+  .personnel-header-actions {
+    width: 100%;
+  }
+
+  .personnel-search {
+    width: 100%;
+  }
+
+  .personnel-footer {
+    flex-direction: column;
+
+    align-items: flex-start;
+  }
+}

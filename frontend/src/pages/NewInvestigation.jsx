@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { createCase } from '../services/api';
+import './NewInvestigation.css';
 
 function NewInvestigation({
   onBack,
@@ -223,6 +224,9 @@ function NewInvestigation({
           </p>
         </div>
 
+        {/* Upper Back button removed.
+            Cancel remains. */}
+
         <button
           type="button"
           className="new-investigation-cancel"
@@ -247,6 +251,7 @@ function NewInvestigation({
         <div className="stepper-line" />
 
         <div className="investigation-step completed">
+
           <div className="step-circle">
             ✓
           </div>
@@ -258,9 +263,12 @@ function NewInvestigation({
           <strong>
             Details
           </strong>
+
         </div>
 
+
         <div className="investigation-step active">
+
           <div className="step-circle">
             02
           </div>
@@ -272,9 +280,12 @@ function NewInvestigation({
           <strong>
             Upload Data
           </strong>
+
         </div>
 
+
         <div className="investigation-step">
+
           <div className="step-circle">
             03
           </div>
@@ -286,9 +297,12 @@ function NewInvestigation({
           <strong>
             Review
           </strong>
+
         </div>
 
+
         <div className="investigation-step">
+
           <div className="step-circle">
             04
           </div>
@@ -300,6 +314,7 @@ function NewInvestigation({
           <strong>
             Create
           </strong>
+
         </div>
 
       </section>
@@ -312,6 +327,7 @@ function NewInvestigation({
       <section className="investigation-name-row">
 
         <label>
+
           <span>
             INVESTIGATION NAME
           </span>
@@ -326,6 +342,7 @@ function NewInvestigation({
             }
             placeholder="Enter investigation name"
           />
+
         </label>
 
       </section>
@@ -338,6 +355,7 @@ function NewInvestigation({
       <section className="upload-section">
 
         <div className="upload-section-heading">
+
           <h2>
             Upload Intelligence Data
           </h2>
@@ -347,6 +365,7 @@ function NewInvestigation({
             the investigation matrix. All files
             must be in CSV format.
           </p>
+
         </div>
 
 
@@ -357,6 +376,7 @@ function NewInvestigation({
         <div className="upload-grid">
 
           {uploadItems.map((item) => {
+
             const selectedFile =
               files[item.key];
 
@@ -364,6 +384,8 @@ function NewInvestigation({
               <article
                 key={item.key}
                 className={`intelligence-upload-card ${
+                  item.accent
+                } ${
                   selectedFile
                     ? 'uploaded'
                     : ''
@@ -382,6 +404,7 @@ function NewInvestigation({
                 <div className="intelligence-upload-content">
 
                   <div className="intelligence-upload-title">
+
                     <h3>
                       {item.title}
                     </h3>
@@ -391,7 +414,9 @@ function NewInvestigation({
                         READY
                       </span>
                     )}
+
                   </div>
+
 
                   <p>
                     {item.description}
@@ -439,6 +464,7 @@ function NewInvestigation({
                         )
                       }
                     />
+
 
                     <button
                       type="button"
@@ -514,6 +540,7 @@ function NewInvestigation({
         </div>
       )}
 
+
       {success && (
         <div
           className="investigation-message success"
@@ -537,6 +564,7 @@ function NewInvestigation({
         >
           ← Back
         </button>
+
 
         <button
           type="button"

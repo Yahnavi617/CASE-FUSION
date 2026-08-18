@@ -1,0 +1,1450 @@
+/* =========================================================
+   CASEFUSION — ENTITIES PAGE
+   Full readable UI
+   ========================================================= */
+
+.cf-entities-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  background: #070b13;
+  color: #e8edf7;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.cf-entities-sidebar {
+  width: 220px;
+  min-width: 220px;
+  min-height: 100vh;
+
+  background: #0d1420;
+  border-right: 1px solid #263246;
+
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 100;
+}
+
+.cf-entities-brand {
+  height: 82px;
+  padding: 16px 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  border-bottom: 1px solid #263246;
+}
+
+.cf-brand-logo {
+  width: 34px;
+  height: 34px;
+
+  border-radius: 7px;
+
+  display: grid;
+  place-items: center;
+
+  background: #8571ff;
+  color: #ffffff;
+
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.cf-entities-brand strong {
+  display: block;
+
+  font-size: 17px;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+
+  color: #f2f4ff;
+}
+
+.cf-entities-brand span {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #8c9bb2;
+
+  font-size: 10px;
+  letter-spacing: 0.8px;
+}
+
+
+/* =========================================================
+   NEW INVESTIGATION BUTTON
+   ========================================================= */
+
+.cf-entities-new-case {
+  width: calc(100% - 28px);
+
+  margin: 20px 14px 18px;
+
+  height: 42px;
+
+  border: 1px solid #9b8cff;
+  border-radius: 5px;
+
+  background: #b4a6ff;
+  color: #14182c;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cf-entities-new-case:hover {
+  background: #c2b8ff;
+
+  box-shadow:
+    0 0 20px rgba(132, 112, 255, 0.25);
+}
+
+.cf-entities-new-case span {
+  margin-right: 7px;
+  font-size: 17px;
+}
+
+
+/* =========================================================
+   SIDEBAR NAVIGATION
+   ========================================================= */
+
+.cf-entities-nav {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+
+  padding: 0 10px;
+}
+
+.cf-entities-nav button {
+  width: 100%;
+  height: 44px;
+
+  border: 0;
+  border-radius: 5px;
+
+  background: transparent;
+
+  color: #8ea3bd;
+
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+
+  padding: 0 15px;
+
+  text-align: left;
+
+  font-size: 14px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.cf-entities-nav button:hover {
+  color: #d8e2f1;
+  background: #172131;
+}
+
+.cf-entities-nav button span:first-child {
+  width: 18px;
+
+  color: #64c9ff;
+
+  font-size: 17px;
+}
+
+.cf-entities-nav .cf-nav-active {
+  background: #252d3c;
+  color: #d7cfff;
+}
+
+.cf-entities-nav .cf-nav-active span:first-child {
+  color: #b6a7ff;
+}
+
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
+.cf-entities-main {
+  flex: 1;
+  min-width: 0;
+}
+
+
+/* =========================================================
+   TOP BAR
+   ========================================================= */
+
+.cf-entities-topbar {
+  height: 62px;
+
+  border-bottom: 1px solid #263246;
+
+  background: #090e17;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 28px;
+
+  gap: 32px;
+}
+
+.cf-entities-hamburger {
+  display: none;
+
+  width: 42px;
+  height: 38px;
+
+  border: 1px solid #34445d;
+  border-radius: 6px;
+
+  background: #111a28;
+
+  cursor: pointer;
+}
+
+.cf-entities-hamburger span {
+  width: 20px;
+  height: 2px;
+
+  display: block;
+
+  margin: 4px auto;
+
+  background: #aebbd0;
+}
+
+
+/* =========================================================
+   TOP TABS
+   ========================================================= */
+
+.cf-entities-tabs {
+  display: flex;
+
+  height: 100%;
+
+  align-items: center;
+
+  gap: 30px;
+}
+
+.cf-entities-tabs button {
+  height: 100%;
+
+  border: 0;
+  border-bottom: 2px solid transparent;
+
+  background: transparent;
+
+  color: #9aa8be;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  letter-spacing: 1px;
+
+  text-transform: uppercase;
+
+  cursor: pointer;
+
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.cf-entities-tabs button:hover {
+  color: #d6dcf0;
+}
+
+.cf-entities-tabs button.active {
+  color: #d0c7ff;
+
+  border-bottom-color: #9b87ff;
+}
+
+
+/* =========================================================
+   GLOBAL SEARCH
+   ========================================================= */
+
+.cf-entities-global-search {
+  margin-left: auto;
+
+  width: 250px;
+  height: 34px;
+
+  border: 1px solid #26354a;
+
+  background: #111a27;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 11px;
+}
+
+.cf-entities-global-search span {
+  color: #7789a4;
+
+  margin-right: 8px;
+
+  font-size: 14px;
+}
+
+.cf-entities-global-search input {
+  width: 100%;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  color: #dbe4f3;
+
+  font-size: 13px;
+}
+
+.cf-entities-global-search input::placeholder {
+  color: #6e7e94;
+}
+
+
+/* =========================================================
+   TOP ICONS
+   ========================================================= */
+
+.cf-entities-top-icons {
+  display: flex;
+
+  align-items: center;
+
+  gap: 18px;
+}
+
+.cf-entities-top-icons button {
+  border: 0;
+
+  background: transparent;
+
+  color: #9eacc2;
+
+  font-size: 18px;
+
+  cursor: pointer;
+}
+
+.cf-profile-circle {
+  width: 30px;
+  height: 30px;
+
+  border-radius: 50%;
+
+  display: grid;
+  place-items: center;
+
+  background: #162337;
+
+  border: 1px solid #3d506d;
+
+  color: #a9b8d0;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
+
+.cf-entities-content {
+  width: min(100%, 1400px);
+
+  margin: 0 auto;
+
+  padding: 38px 34px 70px;
+}
+
+
+/* =========================================================
+   PAGE HEADING
+   ========================================================= */
+
+.cf-entities-heading {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  margin-bottom: 24px;
+}
+
+.cf-entities-heading h1 {
+  margin: 0;
+
+  font-size: 32px;
+
+  line-height: 1.2;
+
+  font-weight: 750;
+
+  color: #f2f5fb;
+}
+
+.cf-entities-heading p {
+  margin: 8px 0 0;
+
+  color: #9babc1;
+
+  font-size: 14px;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   HEADER ACTIONS
+   ========================================================= */
+
+.cf-entities-heading-actions {
+  display: flex;
+
+  gap: 10px;
+}
+
+.cf-export-button,
+.cf-add-entity-button {
+  height: 40px;
+
+  padding: 0 18px;
+
+  border-radius: 5px;
+
+  cursor: pointer;
+
+  font-size: 13px;
+
+  font-weight: 650;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cf-export-button {
+  border: 1px solid #2a3a52;
+
+  background: #111a27;
+
+  color: #c0ccde;
+}
+
+.cf-export-button:hover {
+  border-color: #657692;
+
+  background: #172235;
+}
+
+.cf-add-entity-button {
+  border: 1px solid #a99aff;
+
+  background: #b8abff;
+
+  color: #111426;
+}
+
+.cf-add-entity-button:hover {
+  background: #c8bfff;
+
+  box-shadow:
+    0 0 18px rgba(139, 119, 255, 0.25);
+}
+
+
+/* =========================================================
+   FILTER BAR
+   ========================================================= */
+
+.cf-entity-filters {
+  display: grid;
+
+  grid-template-columns:
+    minmax(350px, 1fr)
+    130px
+    130px
+    145px
+    48px;
+
+  gap: 10px;
+
+  padding: 12px;
+
+  border: 1px solid #27354a;
+
+  background: #101823;
+
+  border-radius: 6px;
+
+  margin-bottom: 18px;
+}
+
+
+/* =========================================================
+   ENTITY SEARCH
+   ========================================================= */
+
+.cf-entity-search {
+  height: 40px;
+
+  border: 1px solid #2a3b52;
+
+  background: #0c131e;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 12px;
+}
+
+.cf-entity-search span {
+  color: #71849d;
+
+  margin-right: 9px;
+
+  font-size: 15px;
+}
+
+.cf-entity-search input {
+  flex: 1;
+
+  min-width: 0;
+
+  border: 0;
+
+  outline: 0;
+
+  background: transparent;
+
+  color: #e6edf8;
+
+  font-size: 13px;
+}
+
+.cf-entity-search input::placeholder {
+  color: #8999af;
+}
+
+
+/* =========================================================
+   FILTER SELECTS
+   ========================================================= */
+
+.cf-entity-filters select,
+.cf-filter-settings {
+  height: 40px;
+
+  border: 1px solid #2a3b52;
+
+  background: #111a27;
+
+  color: #d1dbea;
+
+  padding: 0 12px;
+
+  outline: none;
+
+  font-size: 13px;
+}
+
+.cf-entity-filters select {
+  cursor: pointer;
+}
+
+.cf-filter-settings {
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cf-filter-settings:hover {
+  border-color: #8173e9;
+
+  color: #c8bfff;
+}
+
+
+/* =========================================================
+   TABLE CARD
+   ========================================================= */
+
+.cf-entities-table-card {
+  border: 1px solid #27354a;
+
+  border-radius: 7px;
+
+  overflow: hidden;
+
+  background: #0d1520;
+
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.18);
+}
+
+.cf-table-scroll {
+  overflow-x: auto;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.cf-entities-table {
+  width: 100%;
+
+  min-width: 1050px;
+
+  border-collapse: collapse;
+}
+
+
+/* =========================================================
+   TABLE HEADER
+   ========================================================= */
+
+.cf-entities-table thead {
+  background: #131d2a;
+}
+
+.cf-entities-table th {
+  height: 48px;
+
+  padding: 0 15px;
+
+  border-bottom: 1px solid #2b394d;
+
+  color: #a9b8cc;
+
+  font-size: 11px;
+
+  font-weight: 650;
+
+  text-transform: uppercase;
+
+  letter-spacing: 1.1px;
+
+  text-align: left;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   TABLE BODY
+   ========================================================= */
+
+.cf-entities-table td {
+  height: 58px;
+
+  padding: 0 15px;
+
+  border-bottom: 1px solid #253246;
+
+  color: #d5deeb;
+
+  font-size: 13px;
+
+  white-space: nowrap;
+}
+
+.cf-entities-table tbody tr {
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.cf-entities-table tbody tr:hover {
+  background: #182538;
+}
+
+
+/* =========================================================
+   CHECKBOX
+   ========================================================= */
+
+.cf-check-cell {
+  width: 42px;
+
+  text-align: center !important;
+}
+
+.cf-check-cell input {
+  width: 15px;
+
+  height: 15px;
+
+  accent-color: #9181ff;
+}
+
+
+/* =========================================================
+   ENTITY NAME
+   ========================================================= */
+
+.cf-entity-name {
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+}
+
+.cf-entity-name strong {
+  color: #f0f3f8;
+
+  font-size: 14px;
+
+  font-weight: 650;
+}
+
+
+/* =========================================================
+   ENTITY AVATAR
+   ========================================================= */
+
+.cf-entity-avatar {
+  width: 32px;
+  height: 32px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 5px;
+
+  background: #182434;
+
+  border: 1px solid #2e4058;
+
+  color: #b4c4da;
+
+  font-size: 12px;
+
+  flex-shrink: 0;
+}
+
+
+/* =========================================================
+   ENTITY ID
+   ========================================================= */
+
+.cf-entity-id {
+  color: #9fb1c9;
+
+  font-family: monospace;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   ENTITY TYPE
+   ========================================================= */
+
+.cf-entity-type {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color: #b9c5d5;
+
+  font-size: 13px;
+}
+
+.cf-entity-type span {
+  color: #8ca0ba;
+
+  font-size: 14px;
+}
+
+
+/* =========================================================
+   RISK BADGES
+   ========================================================= */
+
+.cf-entity-risk {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 5px 9px;
+
+  border-radius: 4px;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  line-height: 1;
+}
+
+.cf-risk-high {
+  color: #ff8293;
+
+  background: rgba(230, 66, 90, 0.14);
+
+  border: 1px solid rgba(230, 66, 90, 0.35);
+}
+
+.cf-risk-medium {
+  color: #f3c75c;
+
+  background: rgba(220, 165, 30, 0.14);
+
+  border: 1px solid rgba(220, 165, 30, 0.35);
+}
+
+.cf-risk-low {
+  color: #43d5a0;
+
+  background: rgba(25, 190, 130, 0.12);
+
+  border: 1px solid rgba(25, 190, 130, 0.35);
+}
+
+
+/* =========================================================
+   ACTIVITY
+   ========================================================= */
+
+.cf-entity-activity {
+  color: #9aaac0;
+
+  font-family: monospace;
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   ACTION BUTTON
+   ========================================================= */
+
+.cf-entity-action {
+  height: 32px;
+
+  padding: 0 12px;
+
+  border: 1px solid #33445b;
+
+  border-radius: 4px;
+
+  background: #111b29;
+
+  color: #b7aaff;
+
+  cursor: pointer;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.cf-entity-action:hover {
+  border-color: #8d7fff;
+
+  background: #1a2136;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.cf-empty-entities {
+  height: 130px !important;
+
+  text-align: center;
+
+  color: #8999af !important;
+
+  font-size: 14px !important;
+}
+
+
+/* =========================================================
+   TABLE FOOTER
+   ========================================================= */
+
+.cf-entities-footer {
+  min-height: 54px;
+
+  height: auto;
+
+  padding: 0 15px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  background: #141e2b;
+
+  color: #9aa9bd;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   PAGINATION
+   ========================================================= */
+
+.cf-pagination {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.cf-pagination button {
+  width: 32px;
+
+  height: 32px;
+
+  border: 1px solid #25354b;
+
+  background: #101925;
+
+  color: #a3b1c5;
+
+  cursor: pointer;
+
+  border-radius: 4px;
+
+  font-size: 14px;
+}
+
+.cf-pagination button:hover:not(:disabled) {
+  border-color: #7e70dd;
+
+  color: #c3baff;
+
+  background: #172038;
+}
+
+.cf-pagination button:disabled {
+  opacity: 0.35;
+
+  cursor: not-allowed;
+}
+
+.cf-pagination span {
+  color: #c3ccda;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   MODAL BACKDROP
+   ========================================================= */
+
+.cf-entity-modal-backdrop {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 500;
+
+  display: grid;
+
+  place-items: center;
+
+  padding: 20px;
+
+  background: rgba(2, 5, 10, 0.72);
+
+  backdrop-filter: blur(4px);
+}
+
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.cf-entity-modal {
+  width: min(480px, 100%);
+
+  position: relative;
+
+  padding: 28px;
+
+  border: 1px solid #34445e;
+
+  border-radius: 8px;
+
+  background: #101925;
+
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.5);
+}
+
+.cf-modal-close {
+  position: absolute;
+
+  top: 12px;
+
+  right: 12px;
+
+  width: 32px;
+
+  height: 32px;
+
+  border: 1px solid #304057;
+
+  border-radius: 5px;
+
+  background: #151f2d;
+
+  color: #a9b7ca;
+
+  cursor: pointer;
+
+  font-size: 18px;
+}
+
+.cf-modal-close:hover {
+  border-color: #8173e9;
+
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   MODAL AVATAR
+   ========================================================= */
+
+.cf-modal-avatar {
+  width: 48px;
+
+  height: 48px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 7px;
+
+  background: #1c2b3e;
+
+  color: #b8aaff;
+
+  font-size: 21px;
+}
+
+
+/* =========================================================
+   MODAL TITLE
+   ========================================================= */
+
+.cf-entity-modal h2 {
+  margin: 16px 0 4px;
+
+  color: #f2f5fb;
+
+  font-size: 22px;
+}
+
+.cf-modal-id {
+  color: #8293aa;
+
+  font-family: monospace;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   MODAL GRID
+   ========================================================= */
+
+.cf-modal-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 1px;
+
+  margin-top: 24px;
+
+  border: 1px solid #28374d;
+}
+
+.cf-modal-grid div {
+  padding: 15px;
+
+  background: #0d1622;
+}
+
+.cf-modal-grid label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #8293aa;
+
+  font-size: 10px;
+
+  text-transform: uppercase;
+
+  letter-spacing: 1px;
+}
+
+.cf-modal-grid strong {
+  color: #dce4ef;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   MODAL RISK
+   ========================================================= */
+
+.cf-modal-risk-high {
+  color: #ff7288 !important;
+}
+
+.cf-modal-risk-medium {
+  color: #e9bb4e !important;
+}
+
+.cf-modal-risk-low {
+  color: #41d4a0 !important;
+}
+
+
+/* =========================================================
+   MODAL ACTIONS
+   ========================================================= */
+
+.cf-modal-actions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.cf-modal-actions button {
+  height: 36px;
+
+  padding: 0 15px;
+
+  border: 1px solid #33445c;
+
+  border-radius: 4px;
+
+  background: #151f2d;
+
+  color: #b7c4d7;
+
+  cursor: pointer;
+
+  font-size: 12px;
+}
+
+.cf-modal-actions button:hover {
+  border-color: #8c7df0;
+
+  background: #1a2333;
+}
+
+.cf-modal-actions .danger {
+  border-color: #6f2d3a;
+
+  color: #ff7188;
+
+  background: rgba(150, 30, 50, 0.12);
+}
+
+
+/* =========================================================
+   MOBILE SIDEBAR
+   ========================================================= */
+
+.cf-entities-overlay {
+  display: none;
+}
+
+
+/* =========================================================
+   LARGE SCREEN
+   ========================================================= */
+
+@media (min-width: 1500px) {
+
+  .cf-entities-content {
+    max-width: 1500px;
+
+    padding-left: 45px;
+    padding-right: 45px;
+  }
+
+  .cf-entities-heading h1 {
+    font-size: 34px;
+  }
+
+  .cf-entities-table th {
+    font-size: 12px;
+  }
+
+  .cf-entities-table td {
+    font-size: 14px;
+  }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+  .cf-entities-sidebar {
+    width: 220px;
+
+    min-width: 220px;
+  }
+
+  .cf-entities-content {
+    width: 100%;
+
+    padding: 30px 24px 60px;
+  }
+
+  .cf-entities-table {
+    min-width: 1050px;
+  }
+
+  .cf-entities-global-search {
+    width: 210px;
+  }
+
+  .cf-entities-tabs {
+    gap: 20px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE SIDEBAR
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .cf-entities-sidebar {
+    position: fixed;
+
+    transform: translateX(-100%);
+
+    transition:
+      transform 0.22s ease;
+
+    box-shadow:
+      15px 0 50px rgba(0, 0, 0, 0.45);
+  }
+
+  .cf-entities-sidebar-open {
+    transform: translateX(0);
+  }
+
+  .cf-entities-overlay {
+    display: block;
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 90;
+
+    border: 0;
+
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .cf-entities-hamburger {
+    display: block;
+  }
+
+  .cf-entities-tabs {
+    display: none;
+  }
+
+  .cf-entities-topbar {
+    gap: 14px;
+
+    padding: 0 18px;
+  }
+
+  .cf-entities-global-search {
+    width: 220px;
+  }
+}
+
+
+/* =========================================================
+   SMALL TABLET / PHONE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .cf-entities-content {
+    padding: 24px 16px 50px;
+  }
+
+  .cf-entities-heading {
+    flex-direction: column;
+
+    gap: 16px;
+  }
+
+  .cf-entities-heading h1 {
+    font-size: 28px;
+  }
+
+  .cf-entities-heading p {
+    font-size: 13px;
+  }
+
+  .cf-entities-heading-actions {
+    width: 100%;
+  }
+
+  .cf-export-button,
+  .cf-add-entity-button {
+    flex: 1;
+
+    height: 42px;
+
+    font-size: 13px;
+  }
+
+  .cf-entity-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cf-entity-search {
+    grid-column: 1 / -1;
+  }
+
+  .cf-filter-settings {
+    display: none;
+  }
+
+  .cf-entities-global-search {
+    display: none;
+  }
+
+  .cf-entities-top-icons {
+    margin-left: auto;
+  }
+
+  .cf-entities-table {
+    min-width: 1000px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL PHONE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+  .cf-entities-content {
+    padding: 20px 10px 40px;
+  }
+
+  .cf-entities-heading h1 {
+    font-size: 25px;
+  }
+
+  .cf-entities-heading p {
+    font-size: 12px;
+  }
+
+  .cf-entity-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .cf-entity-search {
+    grid-column: auto;
+  }
+
+  .cf-entities-footer {
+    flex-direction: column;
+
+    height: auto;
+
+    gap: 12px;
+
+    padding: 13px;
+
+    align-items: flex-start;
+  }
+
+  .cf-pagination {
+    width: 100%;
+
+    justify-content: flex-end;
+  }
+}

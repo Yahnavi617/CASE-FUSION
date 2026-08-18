@@ -1,0 +1,921 @@
+/* =========================================================
+   CASEFUSION - LOCATION INTELLIGENCE NETWORK
+   ========================================================= */
+
+.network-page {
+  width: 100%;
+  min-height: calc(100vh - 70px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  background: #05070b;
+  color: #e8edf7;
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   MAP PANEL
+   ========================================================= */
+
+.network-map-panel {
+  position: relative;
+  min-width: 0;
+  min-height: calc(100vh - 70px);
+  background: #020407;
+  border-right: 1px solid #202938;
+  overflow: hidden;
+}
+
+
+.network-map {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: scale(var(--map-zoom));
+  transform-origin: center center;
+  transition: transform 0.25s ease;
+
+  background:
+    radial-gradient(
+      circle at 48% 42%,
+      rgba(51, 68, 82, 0.25),
+      transparent 38%
+    ),
+    radial-gradient(
+      circle at 70% 60%,
+      rgba(38, 50, 65, 0.18),
+      transparent 42%
+    ),
+    #020407;
+}
+
+
+/* =========================================================
+   GRID
+   ========================================================= */
+
+.map-grid {
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(
+      rgba(90, 112, 130, 0.055) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(90, 112, 130, 0.055) 1px,
+      transparent 1px
+    );
+
+  background-size: 50px 50px;
+  opacity: 0.35;
+}
+
+
+/* =========================================================
+   MAP GLOW
+   ========================================================= */
+
+.map-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(45px);
+  pointer-events: none;
+}
+
+.map-glow-one {
+  width: 280px;
+  height: 280px;
+  left: 28%;
+  top: 25%;
+  background: rgba(60, 80, 95, 0.12);
+}
+
+.map-glow-two {
+  width: 340px;
+  height: 340px;
+  right: 15%;
+  bottom: 12%;
+  background: rgba(40, 60, 75, 0.09);
+}
+
+
+/* =========================================================
+   STYLIZED CONTINENTS
+   ========================================================= */
+
+.continent {
+  position: absolute;
+  opacity: 0.28;
+  filter: blur(0.4px);
+  background:
+    radial-gradient(
+      ellipse,
+      #31383e 0%,
+      #20262c 60%,
+      transparent 72%
+    );
+}
+
+
+.continent-europe {
+  width: 280px;
+  height: 150px;
+  left: 30%;
+  top: 17%;
+  transform: rotate(-12deg);
+  border-radius:
+    50% 40% 55% 35%;
+}
+
+
+.continent-africa {
+  width: 290px;
+  height: 390px;
+  left: 31%;
+  top: 29%;
+  transform:
+    rotate(7deg)
+    skewX(-7deg);
+  border-radius:
+    48% 42% 48% 55%;
+}
+
+
+.continent-asia {
+  width: 430px;
+  height: 220px;
+  left: 48%;
+  top: 21%;
+  transform: rotate(7deg);
+  border-radius:
+    40% 50% 45% 35%;
+  opacity: 0.19;
+}
+
+
+/* =========================================================
+   MAP CONNECTIONS
+   ========================================================= */
+
+.network-map-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+
+.map-connection-line {
+  stroke-width: 0.18;
+  stroke-dasharray: 1.5 1.5;
+  opacity: 0.75;
+}
+
+
+.map-connection-line.financial {
+  stroke: #e7b443;
+}
+
+
+.map-connection-line.communication {
+  stroke: #72c9ff;
+}
+
+
+.map-connection-line.device {
+  stroke: #63d4ff;
+}
+
+
+.map-connection-line.default {
+  stroke: #aeb8c7;
+}
+
+
+.map-line-dot {
+  animation: linePulse 1.8s infinite ease-in-out;
+}
+
+
+.map-line-dot.financial {
+  fill: #e7b443;
+}
+
+
+.map-line-dot.communication {
+  fill: #72c9ff;
+}
+
+
+.map-line-dot.device {
+  fill: #63d4ff;
+}
+
+
+@keyframes linePulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+
+/* =========================================================
+   MAP MARKERS
+   ========================================================= */
+
+.map-marker {
+  position: absolute;
+  z-index: 5;
+
+  width: 30px;
+  height: 30px;
+
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+
+.map-marker.center-marker {
+  left: 50%;
+  top: 43%;
+  transform: translate(-50%, -50%);
+}
+
+
+.marker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef6476;
+  box-shadow:
+    0 0 8px rgba(239, 100, 118, 0.9),
+    0 0 18px rgba(239, 100, 118, 0.45);
+}
+
+
+.marker-pulse {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(239, 100, 118, 0.6);
+  border-radius: 50%;
+  animation: markerPulse 2s infinite;
+}
+
+
+.map-marker.financial .marker-pulse {
+  border-color: rgba(231, 180, 67, 0.55);
+}
+
+
+.map-marker.device .marker-pulse {
+  border-color: rgba(99, 212, 255, 0.55);
+}
+
+
+.marker-symbol {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+
+.map-marker.financial .marker-symbol {
+  color: #e7b443;
+  text-shadow: 0 0 10px rgba(231, 180, 67, 0.75);
+}
+
+
+.map-marker.device .marker-symbol {
+  color: #65d5ff;
+  text-shadow: 0 0 10px rgba(101, 213, 255, 0.7);
+}
+
+
+.map-marker.entity .marker-symbol {
+  color: #ef6476;
+}
+
+
+.map-marker.selected {
+  transform: translate(-50%, -50%) scale(1.25);
+}
+
+
+@keyframes markerPulse {
+  0% {
+    transform: scale(0.65);
+    opacity: 0.9;
+  }
+
+  70% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+
+/* =========================================================
+   MAP LABELS
+   ========================================================= */
+
+.map-label {
+  position: absolute;
+  color: rgba(160, 170, 180, 0.4);
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  pointer-events: none;
+}
+
+
+.label-europe {
+  left: 38%;
+  top: 24%;
+}
+
+
+.label-africa {
+  left: 42%;
+  top: 62%;
+}
+
+
+.label-middle-east {
+  left: 57%;
+  top: 34%;
+}
+
+
+/* =========================================================
+   MAP CONTROLS
+   ========================================================= */
+
+.network-map-controls {
+  position: absolute;
+  z-index: 20;
+  top: 18px;
+  left: 18px;
+
+  display: flex;
+  flex-direction: column;
+
+  border: 1px solid #273243;
+  background: rgba(10, 15, 23, 0.9);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+
+.network-map-controls button {
+  width: 42px;
+  height: 42px;
+
+  border: 0;
+  border-bottom: 1px solid #273243;
+
+  background: transparent;
+  color: #bdc7d6;
+
+  font-size: 18px;
+  cursor: pointer;
+}
+
+
+.network-map-controls button:last-child {
+  border-bottom: 0;
+}
+
+
+.network-map-controls button:hover {
+  background: #18212e;
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   LEGEND
+   ========================================================= */
+
+.network-map-legend {
+  position: absolute;
+  z-index: 20;
+  left: 18px;
+  bottom: 18px;
+
+  min-width: 190px;
+  padding: 14px 16px;
+
+  border: 1px solid #283344;
+  background: rgba(9, 14, 22, 0.94);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+}
+
+
+.legend-title {
+  margin-bottom: 12px;
+
+  color: #8995a8;
+
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  margin-top: 9px;
+
+  color: #b9c2d0;
+  font-size: 11px;
+}
+
+
+.legend-marker {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+}
+
+
+.legend-marker.entity {
+  border-radius: 50%;
+  background: #ef6476;
+}
+
+
+.legend-marker.financial {
+  transform: rotate(45deg);
+  background: #e7b443;
+}
+
+
+.legend-marker.device {
+  border: 1px solid #63d4ff;
+  background: transparent;
+}
+
+
+/* =========================================================
+   LOCATION INTELLIGENCE PANEL
+   ========================================================= */
+
+.network-intelligence-panel {
+  min-width: 0;
+  background: #0a101a;
+  overflow-y: auto;
+}
+
+
+.network-intelligence-header {
+  height: 62px;
+  padding: 0 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: 1px solid #222c3b;
+}
+
+
+.network-intelligence-header h2 {
+  margin: 0;
+
+  color: #edf1f8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+.network-intelligence-header button {
+  border: 0;
+  background: transparent;
+  color: #8793a5;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+
+.intelligence-content {
+  padding: 14px;
+}
+
+
+/* =========================================================
+   INTELLIGENCE CARDS
+   ========================================================= */
+
+.intel-card {
+  position: relative;
+
+  margin-bottom: 12px;
+  padding: 14px;
+
+  border: 1px solid #273244;
+  background: #111925;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+
+  cursor: pointer;
+}
+
+
+.intel-card:hover {
+  transform: translateY(-2px);
+  background: #151f2d;
+  border-color: #43516a;
+}
+
+
+.entity-card {
+  border-color: #303a4a;
+}
+
+
+.financial-card {
+  border-color: #33372d;
+}
+
+
+.device-card {
+  border-color: #263b49;
+}
+
+
+.communication-card {
+  border-color: #2b3650;
+}
+
+
+.intel-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 14px;
+}
+
+
+.intel-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  font-family: monospace;
+  font-size: 9px;
+  letter-spacing: 1.4px;
+}
+
+
+.intel-type i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+
+.intel-type.entity {
+  color: #e98291;
+}
+
+
+.intel-type.entity i {
+  background: #e98291;
+}
+
+
+.intel-type.financial {
+  color: #e7b443;
+}
+
+
+.intel-type.financial i {
+  background: #e7b443;
+}
+
+
+.intel-type.device {
+  color: #68cfff;
+}
+
+
+.intel-type.device i {
+  background: #68cfff;
+}
+
+
+.intel-type.communication {
+  color: #a79cff;
+}
+
+
+.intel-type.communication i {
+  background: #a79cff;
+}
+
+
+.intel-open {
+  border: 0;
+  background: transparent;
+  color: #7e8a9c;
+  cursor: pointer;
+}
+
+
+.intel-card h3 {
+  margin: 0 0 16px;
+
+  color: #edf1f8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+.intel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+
+.intel-grid div {
+  min-width: 0;
+}
+
+
+.intel-grid span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #718095;
+
+  font-family: monospace;
+  font-size: 8px;
+  letter-spacing: 1.2px;
+}
+
+
+.intel-grid strong {
+  display: block;
+
+  color: #bac4d3;
+
+  font-family: monospace;
+  font-size: 9px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+
+.confidence-label {
+  margin-top: 18px;
+
+  display: flex;
+  justify-content: space-between;
+
+  color: #778397;
+
+  font-family: monospace;
+  font-size: 9px;
+}
+
+
+.confidence-label strong {
+  color: #cbd4e2;
+}
+
+
+.confidence-bar {
+  height: 5px;
+  margin-top: 7px;
+
+  background: #273142;
+  overflow: hidden;
+}
+
+
+.confidence-bar span {
+  display: block;
+  height: 100%;
+  background: #e65d6d;
+  box-shadow: 0 0 8px rgba(230, 93, 109, 0.45);
+}
+
+
+/* =========================================================
+   LOADING / ERROR
+   ========================================================= */
+
+.network-loading,
+.network-error-state {
+  min-height: 500px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  background: #080c14;
+  color: #9ba6b7;
+
+  text-align: center;
+}
+
+
+.network-error-state h2 {
+  color: #e9edf4;
+}
+
+
+.network-error-state p {
+  max-width: 450px;
+}
+
+
+.network-retry-button {
+  margin-top: 15px;
+  padding: 9px 16px;
+
+  border: 1px solid #3c4c66;
+  background: #142034;
+  color: #cdd6e4;
+
+  cursor: pointer;
+}
+
+
+.network-no-selection {
+  padding: 30px;
+
+  color: #7e899a;
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* =========================================================
+   LIGHT THEME
+   ========================================================= */
+
+body.light-theme .network-page,
+html[data-theme='light'] .network-page {
+  background: #f3f5f9;
+  color: #182033;
+}
+
+
+body.light-theme .network-map-panel,
+html[data-theme='light'] .network-map-panel {
+  background: #e8ebf1;
+  border-color: #d4dae5;
+}
+
+
+body.light-theme .network-map,
+html[data-theme='light'] .network-map {
+  background:
+    radial-gradient(
+      circle at 48% 42%,
+      rgba(80, 95, 115, 0.12),
+      transparent 38%
+    ),
+    #dfe3ea;
+}
+
+
+body.light-theme .network-intelligence-panel,
+html[data-theme='light'] .network-intelligence-panel {
+  background: #f7f8fb;
+}
+
+
+body.light-theme .network-intelligence-header,
+html[data-theme='light'] .network-intelligence-header {
+  border-color: #d8deea;
+}
+
+
+body.light-theme .network-intelligence-header h2,
+html[data-theme='light'] .network-intelligence-header h2 {
+  color: #182033;
+}
+
+
+body.light-theme .intel-card,
+html[data-theme='light'] .intel-card {
+  background: #ffffff;
+  border-color: #d7ddea;
+}
+
+
+body.light-theme .intel-card h3,
+html[data-theme='light'] .intel-card h3 {
+  color: #182033;
+}
+
+
+body.light-theme .intel-grid strong,
+html[data-theme='light'] .intel-grid strong {
+  color: #344054;
+}
+
+
+body.light-theme .network-map-controls,
+html[data-theme='light'] .network-map-controls {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #cbd3e0;
+}
+
+
+body.light-theme .network-map-controls button,
+html[data-theme='light'] .network-map-controls button {
+  color: #344054;
+  border-color: #d5dbe5;
+}
+
+
+body.light-theme .network-map-legend,
+html[data-theme='light'] .network-map-legend {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #d3dae5;
+}
+
+
+body.light-theme .legend-item,
+html[data-theme='light'] .legend-item {
+  color: #475467;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1000px) {
+  .network-page {
+    grid-template-columns: 1fr;
+  }
+
+  .network-map-panel {
+    min-height: 600px;
+  }
+
+  .network-intelligence-panel {
+    min-height: 500px;
+  }
+}
+
+
+@media (max-width: 600px) {
+  .network-page {
+    display: block;
+  }
+
+  .network-map-panel {
+    min-height: 500px;
+  }
+
+  .network-intelligence-panel {
+    min-height: auto;
+  }
+
+  .intel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .network-map-legend {
+    left: 10px;
+    bottom: 10px;
+  }
+}

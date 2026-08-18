@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCases } from '../services/api';
 import './Investigations.css';
+import './InvestigationIntel.css';
 
-function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
+function Investigations({
+  onBack,
+  onNewInvestigation,
+  onOpenCase,
+}) {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -12,6 +17,7 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
   const [riskFilter, setRiskFilter] = useState('All');
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const casesPerPage = 3;
 
@@ -51,7 +57,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
   useEffect(() => {
     loadCases();
   }, []);
-
 
   /* =====================================================
      HELPERS
@@ -153,7 +158,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
       .trim()
       .toLowerCase();
 
-
   /* =====================================================
      FILTERING
   ====================================================== */
@@ -195,7 +199,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
     riskFilter,
   ]);
 
-
   /* =====================================================
      PAGINATION
   ====================================================== */
@@ -229,7 +232,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
     statusFilter,
     riskFilter,
   ]);
-
 
   /* =====================================================
      STATUS / RISK CLASSES
@@ -271,38 +273,48 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
     return 'inv-risk-low';
   };
 
+  /* =====================================================
+     BACK
+  ====================================================== */
+
+  const handleBack = () => {
+    setSidebarOpen(false);
+
+    if (typeof onBack === 'function') {
+      onBack();
+    }
+  };
 
   /* =====================================================
      OPEN CASE
   ====================================================== */
 
   const handleOpenCase = (item) => {
-  if (typeof onOpenCase !== 'function') {
+    if (typeof onOpenCase !== 'function') {
+      console.log(
+        'Open investigation:',
+        item
+      );
+      return;
+    }
+
+    const caseId = getCaseId(item);
+
+    if (!caseId || caseId === '—') {
+      console.error(
+        'Cannot open investigation: Case ID not found.',
+        item
+      );
+      return;
+    }
+
     console.log(
-      'Open investigation:',
-      item
+      'Opening investigation:',
+      caseId
     );
-    return;
-  }
 
-  const caseId = getCaseId(item);
-
-  if (!caseId || caseId === '—') {
-    console.error(
-      'Cannot open investigation: Case ID not found.',
-      item
-    );
-    return;
-  }
-
-  console.log(
-    'Opening investigation:',
-    caseId
-  );
-
-  onOpenCase(caseId);
-};
-
+    onOpenCase(caseId);
+  };
 
   /* =====================================================
      RENDER
@@ -312,38 +324,76 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
     <div className="inv-page">
 
       {/* =================================================
-          SIDEBAR
+          SIDEBAR DRAWER
       ================================================== */}
 
-      <aside className="inv-sidebar">
+      <aside
+        className={`inv-drawer ${
+          sidebarOpen
+            ? 'inv-drawer-open'
+            : ''
+        }`}
+        aria-hidden={!sidebarOpen}
+      >
 
-        <div
-  className="inv-brand"
-  role="button"
-  tabIndex={0}
-  onClick={() => window.history.back()}
-  onKeyDown={(event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      window.history.back();
-    }
-  }}
->
-  <div className="inv-brand-title">
-    CASEFUSION
-  </div>
+        <div className="inv-drawer-header">
 
-  <div className="inv-brand-subtitle">
-    Investigative Intel
-  </div>
-</div>
+          <div
+            className="inv-brand"
+            role="button"
+            tabIndex={0}
+            onClick={handleBack}
+            onKeyDown={(event) => {
+              if (
+                event.key === 'Enter' ||
+                event.key === ' '
+              ) {
+                event.preventDefault();
+                handleBack();
+              }
+            }}
+          >
 
+            <div className="inv-brand-title">
+              CASEFUSION
+            </div>
+
+            <div className="inv-brand-subtitle">
+              Investigative Intel
+            </div>
+
+          </div>
+
+          <button
+            type="button"
+            className="inv-drawer-close"
+            onClick={() =>
+              setSidebarOpen(false)
+            }
+            aria-label="Close navigation"
+          >
+            ×
+          </button>
+
+        </div>
 
         <button
           type="button"
           className="inv-new-button"
-          onClick={onNewInvestigation}
+          onClick={() => {
+
+            setSidebarOpen(false);
+
+            if (
+              typeof onNewInvestigation ===
+              'function'
+            ) {
+              onNewInvestigation();
+            }
+
+          }}
         >
+
           <span className="inv-new-plus">
             ＋
           </span>
@@ -351,123 +401,106 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
           <span>
             New Investigation
           </span>
-        </button>
 
+        </button>
 
         <nav className="inv-sidebar-nav">
 
           <button
-  type="button"
-  className="inv-nav-item"
-  onClick={onBack}
->
-  <span className="inv-nav-icon">
-    ▦
-  </span>
-
-  <span>
-    Home
-  </span>
-</button>
-
+            type="button"
+            className="inv-nav-item"
+            onClick={handleBack}
+          >
+            <span>Home</span>
+          </button>
 
           <button
             type="button"
             className="inv-nav-item inv-nav-active"
+            onClick={() =>
+              setSidebarOpen(false)
+            }
           >
-            <span className="inv-nav-icon">
-              ▣
-            </span>
-
-            <span>
-              Cases
-            </span>
+            <span>Cases</span>
           </button>
-
 
           <button
             type="button"
             className="inv-nav-item"
+            onClick={() =>
+              setSidebarOpen(false)
+            }
           >
-            <span className="inv-nav-icon">
-              ⌘
-            </span>
-
-            <span>
-              Visualizer
-            </span>
+            <span>Visualizer</span>
           </button>
-
 
           <button
             type="button"
             className="inv-nav-item"
+            onClick={() =>
+              setSidebarOpen(false)
+            }
           >
-            <span className="inv-nav-icon">
-              ▥
-            </span>
-
-            <span>
-              Reports
-            </span>
+            <span>Reports</span>
           </button>
-
 
           <button
             type="button"
             className="inv-nav-item"
+            onClick={() =>
+              setSidebarOpen(false)
+            }
           >
-            <span className="inv-nav-icon">
-              ♧
-            </span>
-
-            <span>
-              Personnel
-            </span>
+            <span>Personnel</span>
           </button>
-
 
           <button
             type="button"
             className="inv-nav-item"
+            onClick={() =>
+              setSidebarOpen(false)
+            }
           >
-            <span className="inv-nav-icon">
-              ⚙
-            </span>
-
-            <span>
-              Settings
-            </span>
+            <span>Settings</span>
           </button>
 
         </nav>
 
-
-        <div className="inv-profile">
-
-          <div className="inv-profile-icon">
-            ♙
-          </div>
-
-          <span>
-            Investigator Profile
-          </span>
-
-        </div>
-
       </aside>
-
 
       {/* =================================================
           MAIN
       ================================================== */}
 
-      <main className="inv-main">
+      <main
+        className={`inv-main ${
+          sidebarOpen
+            ? 'inv-main-shifted'
+            : ''
+        }`}
+      >
 
-
-        {/* TOP BAR */}
+        {/* =================================================
+            TOP BAR
+        ================================================== */}
 
         <header className="inv-topbar">
+
+          <button
+            type="button"
+            className="inv-hamburger"
+            onClick={() =>
+              setSidebarOpen(true)
+            }
+            aria-label="Open navigation"
+            aria-expanded={sidebarOpen}
+          >
+
+            <span />
+            <span />
+            <span />
+
+          </button>
 
           <div className="inv-top-search">
 
@@ -487,73 +520,99 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
 
           </div>
 
-
           <nav className="inv-top-nav">
 
-            <button>
+            <button
+              type="button"
+              onClick={() =>
+                setSidebarOpen(false)
+              }
+            >
               Overview
             </button>
 
-            <button>
+            <button
+              type="button"
+              onClick={() =>
+                setSidebarOpen(false)
+              }
+            >
               Evidence
             </button>
 
-            <button>
+            <button
+              type="button"
+              onClick={() =>
+                setSidebarOpen(false)
+              }
+            >
               Leads
             </button>
 
-            <button>
+            <button
+              type="button"
+              onClick={() =>
+                setSidebarOpen(false)
+              }
+            >
               Network
             </button>
 
-            <button>
+            <button
+              type="button"
+              onClick={() =>
+                setSidebarOpen(false)
+              }
+            >
               Reports
             </button>
 
           </nav>
 
+        </header>
 
-          <div className="inv-top-actions">
+        {/* =================================================
+            CONTENT
+        ================================================== */}
 
-            <button>
-              ♧
-            </button>
+        <section className="inv-content">
 
-            <button>
-              ?
-            </button>
+          {/* =================================================
+              PAGE HEADING + BACK BUTTON
+          ================================================== */}
 
-            <div className="inv-avatar">
-              I
+          <div className="inv-heading">
+
+            <div className="inv-heading-left">
+
+              <button
+                type="button"
+                className="inv-back-button"
+                onClick={handleBack}
+              >
+                ← Back
+              </button>
+
+              <div>
+
+                <h1>
+                  Investigations
+                </h1>
+
+                <p>
+                  Search and manage
+                  investigation cases.
+                </p>
+
+              </div>
+
             </div>
 
           </div>
 
-        </header>
-
-
-        {/* CONTENT */}
-
-        <section className="inv-content">
-
-
-          {/* PAGE TITLE */}
-
-          <div className="inv-heading">
-
-            <h1>
-              Investigations
-            </h1>
-
-            <p>
-              Search and manage investigation
-              cases.
-            </p>
-
-          </div>
-
-
-          {/* FILTER BAR */}
+          {/* =================================================
+              FILTER BAR
+          ================================================== */}
 
           <section className="inv-filter-panel">
 
@@ -575,7 +634,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
 
             </div>
 
-
             <select
               value={statusFilter}
               onChange={(event) =>
@@ -585,6 +643,7 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
               }
               className="inv-filter-select"
             >
+
               <option value="All">
                 Status: All
               </option>
@@ -604,8 +663,8 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
               <option value="Uploaded">
                 Status: Uploaded
               </option>
-            </select>
 
+            </select>
 
             <select
               value={riskFilter}
@@ -616,6 +675,7 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
               }
               className="inv-filter-select"
             >
+
               <option value="All">
                 Risk: All
               </option>
@@ -631,13 +691,14 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
               <option value="Low">
                 Risk: Low
               </option>
-            </select>
 
+            </select>
 
             <button
               type="button"
               className="inv-date-filter"
             >
+
               <span>
                 □
               </span>
@@ -645,12 +706,14 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
               <span>
                 Date Range
               </span>
+
             </button>
 
           </section>
 
-
-          {/* CASE TABLE */}
+          {/* =================================================
+              TABLE
+          ================================================== */}
 
           <section className="inv-table-panel">
 
@@ -698,7 +761,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
 
                 </thead>
 
-
                 <tbody>
 
                   {loading && (
@@ -714,7 +776,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
                     </tr>
                   )}
 
-
                   {!loading &&
                     error && (
                       <tr>
@@ -729,7 +790,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
                       </tr>
                     )}
 
-
                   {!loading &&
                     !error &&
                     visibleCases.length ===
@@ -740,12 +800,12 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
                           colSpan="8"
                           className="inv-message"
                         >
-                          No investigations found.
+                          No investigations
+                          found.
                         </td>
 
                       </tr>
                     )}
-
 
                   {!loading &&
                     !error &&
@@ -777,18 +837,20 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
                           >
 
                             <td>
+
                               <span className="inv-case-name">
                                 {name}
                               </span>
+
                             </td>
 
-
                             <td>
+
                               <span className="inv-case-id">
                                 {id}
                               </span>
-                            </td>
 
+                            </td>
 
                             <td>
 
@@ -806,7 +868,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
 
                             </td>
 
-
                             <td>
 
                               <span
@@ -819,11 +880,9 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
 
                             </td>
 
-
                             <td className="inv-leads">
                               {leads}
                             </td>
-
 
                             <td>
                               {formatDate(
@@ -833,7 +892,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
                               )}
                             </td>
 
-
                             <td>
                               {formatDate(
                                 getUpdatedDate(
@@ -841,7 +899,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
                                 )
                               )}
                             </td>
-
 
                             <td>
 
@@ -870,8 +927,9 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
 
             </div>
 
-
-            {/* PAGINATION */}
+            {/* =================================================
+                FOOTER / PAGINATION
+            ================================================== */}
 
             <div className="inv-table-footer">
 
@@ -892,7 +950,6 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
 
               </span>
 
-
               <div className="inv-pagination">
 
                 <button
@@ -909,10 +966,10 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
                         )
                     )
                   }
+                  aria-label="Previous page"
                 >
                   ‹
                 </button>
-
 
                 <button
                   type="button"
@@ -929,6 +986,7 @@ function Investigations({ onBack, onNewInvestigation, onOpenCase }) {
                         )
                     )
                   }
+                  aria-label="Next page"
                 >
                   ›
                 </button>

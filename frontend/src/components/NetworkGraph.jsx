@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCaseNetwork } from '../services/api';
+import './NetworkGraph.css';
 
 function NetworkGraph({ caseId, selectedLead }) {
   const [network, setNetwork] = useState({
@@ -10,6 +11,8 @@ function NetworkGraph({ caseId, selectedLead }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedEntity, setSelectedEntity] = useState(null);
+
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     loadNetwork();
@@ -22,20 +25,37 @@ function NetworkGraph({ caseId, selectedLead }) {
 
       const data = await getCaseNetwork(caseId);
 
+      const nodes = data?.nodes || [];
+      const edges = data?.edges || [];
+
       setNetwork({
-        nodes: data.nodes || [],
-        edges: data.edges || [],
+        nodes,
+        edges,
       });
+
+      if (selectedLead) {
+        const selected = nodes.find(
+          (node) => node.id === selectedLead.id
+        );
+
+        setSelectedEntity(selected || nodes[0] || null);
+      } else {
+        setSelectedEntity(nodes[0] || null);
+      }
     } catch (err) {
       console.error('Failed to load network:', err);
 
       setError(
-        err.message || 'Failed to load network graph.'
+        err?.message || 'Failed to load network intelligence.'
       );
     } finally {
       setLoading(false);
     }
   }
+
+  /* =====================================================
+     CENTER ENTITY
+  ====================================================== */
 
   const centerNode = useMemo(() => {
     if (selectedLead) {
@@ -50,6 +70,10 @@ function NetworkGraph({ caseId, selectedLead }) {
 
     return network.nodes[0] || null;
   }, [network.nodes, selectedLead]);
+
+  /* =====================================================
+     CONNECTED ENTITIES
+  ====================================================== */
 
   const connectedEntities = useMemo(() => {
     if (!centerNode) {
@@ -97,7 +121,15 @@ function NetworkGraph({ caseId, selectedLead }) {
     });
 
     return Array.from(entityMap.values());
-  }, [centerNode, network.nodes, network.edges]);
+  }, [
+    centerNode,
+    network.nodes,
+    network.edges,
+  ]);
+
+  /* =====================================================
+     CONNECTIONS
+  ====================================================== */
 
   const centerConnections = useMemo(() => {
     if (!centerNode) {
@@ -126,57 +158,58 @@ function NetworkGraph({ caseId, selectedLead }) {
         };
       })
       .filter((item) => item.node);
-  }, [centerNode, network.edges, network.nodes]);
+  }, [
+    centerNode,
+    network.edges,
+    network.nodes,
+  ]);
+
+  /* =====================================================
+     SELECT DEFAULT ENTITY
+  ====================================================== */
 
   useEffect(() => {
-    if (!centerNode) {
-      setSelectedEntity(null);
-      return;
+    if (!selectedEntity && centerNode) {
+      setSelectedEntity(centerNode);
     }
+  }, [centerNode, selectedEntity]);
 
-    setSelectedEntity(centerNode);
-  }, [centerNode]);
-
-  function getConnectionClass(type) {
-    if (type === 'financial') {
-      return 'financial';
-    }
-
-    if (type === 'communication') {
-      return 'communication';
-    }
-
-    if (type === 'device') {
-      return 'device';
-    }
-
-    return 'default';
-  }
-
-  function getRelationshipLabel(type) {
-    if (type === 'financial') {
-      return 'Financial';
-    }
-
-    if (type === 'communication') {
-      return 'Communication';
-    }
-
-    if (type === 'device') {
-      return 'Shared Device';
-    }
-
-    return type || 'Relationship';
-  }
+  /* =====================================================
+     HELPERS
+  ====================================================== */
 
   function getNodeType(node) {
-    const type =
+    return String(
       node?.type ||
-      node?.entityType ||
-      node?.category ||
-      'person';
+        node?.entityType ||
+        node?.category ||
+        'person'
+    ).toLowerCase();
+  }
 
-    return String(type).toLowerCase();
+  function getEntityLocation(node) {
+    return (
+      node?.location ||
+      node?.address ||
+      '48.8566° N, 2.3522° E'
+    );
+  }
+
+  function getEntityLastActive(node) {
+    return (
+      node?.lastActive ||
+      node?.last_active ||
+      node?.lastSeen ||
+      '2023-10-27 14:08:00Z'
+    );
+  }
+
+  function getEntityStatus(node) {
+    return (
+      node?.status ||
+      node?.state ||
+      'Under Surveillance'
+    );
   }
 
   function getNodeIcon(node) {
@@ -206,121 +239,119 @@ function NetworkGraph({ caseId, selectedLead }) {
     return '♙';
   }
 
-  function getEntityStatus(node) {
-    return (
-      node?.status ||
-      node?.state ||
-      'Under Surveillance'
+  function getConnectionType(types = []) {
+    const value = String(types[0] || '').toLowerCase();
+
+    if (value.includes('financial')) {
+      return 'financial';
+    }
+
+    if (value.includes('communication')) {
+      return 'communication';
+    }
+
+    if (value.includes('device')) {
+      return 'device';
+    }
+
+    return 'default';
+  }
+
+  function getRelationshipLabel(type) {
+    const value = String(type || '').toLowerCase();
+
+    if (value.includes('financial')) {
+      return 'Wire Transfer';
+    }
+
+    if (value.includes('communication')) {
+      return 'Communication';
+    }
+
+    if (value.includes('device')) {
+      return 'Device Ping';
+    }
+
+    return type || 'Relationship';
+  }
+
+  function getMarkerClass(node, types = []) {
+    const type = getNodeType(node);
+    const relation = getConnectionType(types);
+
+    if (
+      type.includes('device') ||
+      type.includes('phone') ||
+      relation === 'device'
+    ) {
+      return 'device';
+    }
+
+    if (
+      type.includes('account') ||
+      type.includes('bank') ||
+      relation === 'financial'
+    ) {
+      return 'financial';
+    }
+
+    return 'entity';
+  }
+
+  /* =====================================================
+     MAP POSITIONS
+  ====================================================== */
+
+  const mapPositions = useMemo(() => {
+    const fallback = [
+      {
+        left: '57%',
+        top: '31%',
+      },
+      {
+        left: '64%',
+        top: '46%',
+      },
+      {
+        left: '38%',
+        top: '62%',
+      },
+      {
+        left: '47%',
+        top: '76%',
+      },
+      {
+        left: '70%',
+        top: '65%',
+      },
+    ];
+
+    return connectedEntities.map(
+      (_, index) =>
+        fallback[index] || {
+          left: `${25 + ((index * 17) % 55)}%`,
+          top: `${25 + ((index * 23) % 50)}%`,
+        }
     );
-  }
+  }, [connectedEntities]);
 
-  function getEntityLocation(node) {
-    return (
-      node?.location ||
-      node?.address ||
-      'Sector 4, NW'
-    );
-  }
-
-  function getEntityLastActive(node) {
-    return (
-      node?.lastActive ||
-      node?.last_active ||
-      node?.lastSeen ||
-      '2023-10-27 14:32Z'
-    );
-  }
-
-  function getPositions(count) {
-    if (count === 0) {
-      return [];
-    }
-
-    if (count === 1) {
-      return [
-        {
-          x: 50,
-          y: 18,
-        },
-      ];
-    }
-
-    if (count === 2) {
-      return [
-        {
-          x: 24,
-          y: 35,
-        },
-        {
-          x: 76,
-          y: 35,
-        },
-      ];
-    }
-
-    if (count === 3) {
-      return [
-        {
-          x: 24,
-          y: 42,
-        },
-        {
-          x: 76,
-          y: 42,
-        },
-        {
-          x: 76,
-          y: 72,
-        },
-      ];
-    }
-
-    if (count === 4) {
-      return [
-        {
-          x: 20,
-          y: 30,
-        },
-        {
-          x: 80,
-          y: 30,
-        },
-        {
-          x: 80,
-          y: 70,
-        },
-        {
-          x: 20,
-          y: 70,
-        },
-      ];
-    }
-
-    return connectedEntities.map((_, index) => {
-      const angle =
-        (Math.PI * 2 * index) /
-        Math.max(count, 1);
-
-      return {
-        x: 50 + Math.cos(angle) * 34,
-        y: 50 + Math.sin(angle) * 34,
-      };
-    });
-  }
-
-  const positions = getPositions(
-    connectedEntities.length
-  );
+  /* =====================================================
+     LOADING
+  ====================================================== */
 
   if (loading) {
     return (
       <div className="network-page">
         <div className="network-loading">
-          Loading entity network...
+          Loading location intelligence...
         </div>
       </div>
     );
   }
+
+  /* =====================================================
+     ERROR
+  ====================================================== */
 
   if (error) {
     return (
@@ -328,293 +359,308 @@ function NetworkGraph({ caseId, selectedLead }) {
         <div className="network-error-state">
           <h2>Unable to load network</h2>
           <p>{error}</p>
+
+          <button
+            type="button"
+            onClick={loadNetwork}
+            className="network-retry-button"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
+  /* =====================================================
+     RENDER
+  ====================================================== */
+
   return (
     <div className="network-page">
 
-      {/* PAGE HEADER */}
+      {/* ===============================================
+          MAP
+      ================================================ */}
 
-      <div className="network-page-header">
+      <section className="network-map-panel">
 
-        <div>
-          <p className="network-eyebrow">
-            NETWORK INTELLIGENCE
-          </p>
+        {/* MAP CONTROLS */}
 
-          <h2>
-            Entity Relationship Network
-          </h2>
+        <div className="network-map-controls">
 
-          <p>
-            Financial, communication and shared-device
-            relationships detected in this case.
-          </p>
+          <button
+            type="button"
+            onClick={() =>
+              setZoom((value) =>
+                Math.min(value + 0.15, 1.6)
+              )
+            }
+          >
+            +
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setZoom((value) =>
+                Math.max(value - 0.15, 0.75)
+              )
+            }
+          >
+            −
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setZoom(1)}
+          >
+            ◇
+          </button>
+
+          <button
+            type="button"
+            onClick={loadNetwork}
+          >
+            ↻
+          </button>
+
         </div>
 
-        <div className="network-legend-top">
+        {/* MAP */}
 
-          <span>
-            <i className="legend-dot financial" />
-            Financial
-          </span>
+        <div
+          className="network-map"
+          style={{
+            '--map-zoom': zoom,
+          }}
+        >
 
-          <span>
-            <i className="legend-dot communication" />
-            Communication
-          </span>
+          <div className="map-grid" />
 
-          <span>
-            <i className="legend-dot device" />
-            Shared Device
-          </span>
+          <div className="map-glow map-glow-one" />
+          <div className="map-glow map-glow-two" />
 
-        </div>
+          {/* Stylized continent shapes */}
 
-      </div>
+          <div className="continent continent-europe" />
+          <div className="continent continent-africa" />
+          <div className="continent continent-asia" />
 
-      <div className="network-layout">
+          {/* Connection lines */}
 
-        {/* GRAPH */}
+          <svg
+            className="network-map-lines"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            {connectedEntities.map(
+              ({ node, types }, index) => {
+                const position =
+                  mapPositions[index];
 
-        <div className="network-canvas">
+                if (!position) {
+                  return null;
+                }
 
-          <div className="network-controls">
+                const left =
+                  parseFloat(position.left);
 
-            <button type="button">
-              +
-            </button>
+                const top =
+                  parseFloat(position.top);
 
-            <button type="button">
-              −
-            </button>
+                const type =
+                  getConnectionType(types);
 
-            <button type="button">
-              ⛶
-            </button>
+                return (
+                  <g key={`${node.id}-${index}`}>
 
+                    <line
+                      x1="50"
+                      y1="43"
+                      x2={left}
+                      y2={top}
+                      className={`map-connection-line ${type}`}
+                    />
+
+                    <circle
+                      cx={(50 + left) / 2}
+                      cy={(43 + top) / 2}
+                      r="0.8"
+                      className={`map-line-dot ${type}`}
+                    />
+
+                  </g>
+                );
+              }
+            )}
+          </svg>
+
+          {/* CENTER MARKER */}
+
+          {centerNode && (
             <button
               type="button"
-              onClick={loadNetwork}
+              className="map-marker entity center-marker"
+              onClick={() =>
+                setSelectedEntity(centerNode)
+              }
+              title={centerNode.label}
             >
-              ↻
+              <span className="marker-pulse" />
+              <span className="marker-dot" />
             </button>
+          )}
+
+          {/* OTHER MARKERS */}
+
+          {connectedEntities.map(
+            ({ node, types }, index) => {
+              const position =
+                mapPositions[index];
+
+              if (!position) {
+                return null;
+              }
+
+              const markerClass =
+                getMarkerClass(node, types);
+
+              const isSelected =
+                selectedEntity?.id === node.id;
+
+              return (
+                <button
+                  type="button"
+                  key={node.id}
+                  className={`map-marker ${markerClass} ${
+                    isSelected ? 'selected' : ''
+                  }`}
+                  style={{
+                    left: position.left,
+                    top: position.top,
+                  }}
+                  onClick={() =>
+                    setSelectedEntity(node)
+                  }
+                  title={node.label}
+                >
+                  <span className="marker-pulse" />
+                  <span className="marker-symbol">
+                    {markerClass === 'financial'
+                      ? '◆'
+                      : markerClass === 'device'
+                        ? '□'
+                        : '●'}
+                  </span>
+                </button>
+              );
+            }
+          )}
+
+          {/* MAP LABELS */}
+
+          <span className="map-label label-europe">
+            EUROPE
+          </span>
+
+          <span className="map-label label-africa">
+            AFRICA
+          </span>
+
+          <span className="map-label label-middle-east">
+            MIDDLE EAST
+          </span>
+
+          {/* LEGEND */}
+
+          <div className="network-map-legend">
+
+            <div className="legend-title">
+              MAP LEGEND
+            </div>
+
+            <div className="legend-item">
+              <span className="legend-marker entity" />
+              Entity Location
+            </div>
+
+            <div className="legend-item">
+              <span className="legend-marker financial" />
+              Transaction Node
+            </div>
+
+            <div className="legend-item">
+              <span className="legend-marker device" />
+              Device Ping
+            </div>
 
           </div>
 
-          {centerNode ? (
-            <>
+        </div>
+      </section>
 
-              <svg
-                className="network-svg"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-              >
 
-                {connectedEntities.map(
-                  ({ node, types }, index) => {
-                    const position =
-                      positions[index];
+      {/* ===============================================
+          LOCATION INTELLIGENCE
+      ================================================ */}
 
-                    if (!position) {
-                      return null;
-                    }
+      <aside className="network-intelligence-panel">
 
-                    const type =
-                      types[0] || 'default';
+        <div className="network-intelligence-header">
 
-                    const midpointX =
-                      (50 + position.x) / 2;
+          <h2>
+            Location Intelligence
+          </h2>
 
-                    const midpointY =
-                      (50 + position.y) / 2;
-
-                    return (
-                      <g
-                        key={`${node.id}-edge`}
-                      >
-
-                        <line
-                          x1="50"
-                          y1="50"
-                          x2={position.x}
-                          y2={position.y}
-                          className={`network-line ${getConnectionClass(
-                            type
-                          )}`}
-                        />
-
-                        <circle
-                          cx={midpointX}
-                          cy={midpointY}
-                          r="1.7"
-                          className={`network-line-marker ${getConnectionClass(
-                            type
-                          )}`}
-                        />
-
-                      </g>
-                    );
-                  }
-                )}
-
-              </svg>
-
-              {/* CENTER NODE */}
-
-              <button
-                type="button"
-                className="network-center-node"
-                onClick={() =>
-                  setSelectedEntity(
-                    centerNode
-                  )
-                }
-              >
-
-                <div className="network-node-icon">
-                  {getNodeIcon(centerNode)}
-                </div>
-
-                <strong>
-                  {centerNode.label}
-                </strong>
-
-                <span>
-                  {centerNode.id}
-                </span>
-
-              </button>
-
-              {/* OTHER NODES */}
-
-              {connectedEntities.map(
-                ({ node, types }, index) => {
-                  const position =
-                    positions[index];
-
-                  if (!position) {
-                    return null;
-                  }
-
-                  const isSelected =
-                    selectedEntity?.id ===
-                    node.id;
-
-                  return (
-                    <button
-                      type="button"
-                      key={node.id}
-                      className={`network-entity-node ${
-                        isSelected
-                          ? 'selected'
-                          : ''
-                      }`}
-                      style={{
-                        left: `${position.x}%`,
-                        top: `${position.y}%`,
-                      }}
-                      onClick={() =>
-                        setSelectedEntity(
-                          node
-                        )
-                      }
-                    >
-
-                      <div className="network-node-icon">
-                        {getNodeIcon(node)}
-                      </div>
-
-                      <strong>
-                        {node.label}
-                      </strong>
-
-                      <span>
-                        {node.id}
-                      </span>
-
-                    </button>
-                  );
-                }
-              )}
-
-            </>
-          ) : (
-            <div className="network-empty">
-              No entities available.
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={loadNetwork}
+            title="Refresh"
+          >
+            ≡
+          </button>
 
         </div>
 
-        {/* ENTITY DETAILS */}
 
-        <aside className="network-details">
+        {selectedEntity ? (
+          <div className="intelligence-content">
 
-          <div className="network-details-heading">
-            ENTITY DETAILS
-          </div>
+            {/* ENTITY SIGHTING */}
 
-          {selectedEntity ? (
-            <>
+            <article className="intel-card entity-card">
 
-              <div className="network-entity-header">
+              <div className="intel-card-top">
 
-                <div className="network-detail-avatar">
-                  {getNodeIcon(
-                    selectedEntity
-                  )}
-                </div>
+                <span className="intel-type entity">
+                  <i />
+                  ENTITY SIGHTING
+                </span>
 
-                <div>
-
-                  <h3>
-                    {selectedEntity.label}
-                  </h3>
-
-                  <span className="network-entity-id">
-                    ID: {selectedEntity.id}
-                  </span>
-
-                </div>
-
-                <span className="network-risk-dot" />
+                <button
+                  type="button"
+                  className="intel-open"
+                  onClick={() =>
+                    setSelectedEntity(
+                      selectedEntity
+                    )
+                  }
+                >
+                  ↗
+                </button>
 
               </div>
 
-              <div className="network-property-table">
+              <h3>
+                {selectedEntity.label ||
+                  'Target Alpha-X'}
+              </h3>
 
-                <div className="network-property-row">
-                  <span>Property</span>
-                  <span>Value</span>
-                </div>
+              <div className="intel-grid">
 
-                <div className="network-property-row">
-                  <span>Status</span>
-
-                  <strong className="network-status-value">
-                    {getEntityStatus(
-                      selectedEntity
-                    )}
-                  </strong>
-                </div>
-
-                <div className="network-property-row">
-                  <span>Last Active</span>
-
-                  <strong>
-                    {getEntityLastActive(
-                      selectedEntity
-                    )}
-                  </strong>
-                </div>
-
-                <div className="network-property-row">
-                  <span>Location</span>
-
+                <div>
+                  <span>LOCATION</span>
                   <strong>
                     {getEntityLocation(
                       selectedEntity
@@ -622,68 +668,128 @@ function NetworkGraph({ caseId, selectedLead }) {
                   </strong>
                 </div>
 
+                <div>
+                  <span>TIME (UTC)</span>
+                  <strong>
+                    {getEntityLastActive(
+                      selectedEntity
+                    )}
+                  </strong>
+                </div>
+
               </div>
 
-              <div className="network-connections-title">
-                DIRECT CONNECTIONS (
-                {centerConnections.length}
-                )
+              <div className="confidence-label">
+                <span>Confidence</span>
+                <strong>87%</strong>
               </div>
 
-              <div className="network-connections">
+              <div className="confidence-bar">
+                <span style={{ width: '87%' }} />
+              </div>
 
-                {centerConnections.length > 0 ? (
-                  centerConnections.map(
-                    ({
-                      edge,
-                      node,
-                    }) => (
-                      <button
-                        type="button"
-                        className="network-connection-card"
-                        key={`${edge.source}-${edge.target}`}
-                        onClick={() =>
-                          setSelectedEntity(
-                            node
-                          )
-                        }
-                      >
+            </article>
 
-                        <strong>
-                          {node.label}
-                        </strong>
 
-                        <span>
+            {/* CONNECTION CARDS */}
+
+            {centerConnections
+              .slice(0, 3)
+              .map(
+                ({
+                  edge,
+                  node,
+                }) => {
+
+                  const relation =
+                    String(
+                      edge.type || ''
+                    ).toLowerCase();
+
+                  let cardType = 'financial';
+
+                  if (
+                    relation.includes(
+                      'device'
+                    )
+                  ) {
+                    cardType = 'device';
+                  } else if (
+                    relation.includes(
+                      'communication'
+                    )
+                  ) {
+                    cardType =
+                      'communication';
+                  }
+
+                  return (
+                    <article
+                      className={`intel-card ${cardType}-card`}
+                      key={`${edge.source}-${edge.target}`}
+                      onClick={() =>
+                        setSelectedEntity(
+                          node
+                        )
+                      }
+                    >
+
+                      <div className="intel-card-top">
+
+                        <span
+                          className={`intel-type ${cardType}`}
+                        >
+                          <i />
                           {getRelationshipLabel(
                             edge.type
-                          )}
+                          ).toUpperCase()}
                         </span>
 
-                        <b>
-                          ›
-                        </b>
+                      </div>
 
-                      </button>
-                    )
-                  )
-                ) : (
-                  <div className="network-no-connections">
-                    No direct connections found.
-                  </div>
-                )}
+                      <h3>
+                        {node.label}
+                      </h3>
 
-              </div>
+                      <div className="intel-grid">
 
-            </>
-          ) : (
-            <div className="network-no-selection">
-              Select an entity to view details.
-            </div>
-          )}
+                        <div>
+                          <span>
+                            ROUTING / ID
+                          </span>
 
-        </aside>
+                          <strong>
+                            {node.id}
+                          </strong>
+                        </div>
 
-      </div>
+                        <div>
+                          <span>
+                            STATUS
+                          </span>
+
+                          <strong>
+                            {getEntityStatus(
+                              node
+                            )}
+                          </strong>
+                        </div>
+
+                      </div>
+
+                    </article>
+                  );
+                }
+              )}
+
+          </div>
+        ) : (
+          <div className="network-no-selection">
+            No location intelligence available.
+          </div>
+        )}
+
+      </aside>
 
     </div>
   );

@@ -15,23 +15,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-// =====================================================
-// STORAGE SETUP
-// =====================================================
-
 const STORAGE_DIR = path.join(__dirname, 'storage');
 const CASES_DIR = path.join(STORAGE_DIR, 'cases');
 
 fs.mkdirSync(CASES_DIR, {
     recursive: true
 });
-
-
-// =====================================================
-// MULTER UPLOAD CONFIG
-// =====================================================
-
 const upload = multer({
 
     storage: multer.memoryStorage(),
@@ -55,11 +44,6 @@ const upload = multer({
 
 });
 
-
-// =====================================================
-// HELPER — CREATE CASE ID
-// =====================================================
-
 function generateCaseId() {
 
     const date = new Date()
@@ -73,20 +57,11 @@ function generateCaseId() {
     return `CASE-${date}-${random}`;
 }
 
-
-// =====================================================
-// CSV VALIDATION
-// =====================================================
-
 function validateCSV(
     buffer,
     requiredColumns,
     fileName
 ) {
-
-    // -----------------------------------------------
-    // CHECK BUFFER
-    // -----------------------------------------------
 
     if (!buffer || !Buffer.isBuffer(buffer)) {
 
@@ -96,18 +71,8 @@ function validateCSV(
 
     }
 
-
-    // -----------------------------------------------
-    // READ FILE
-    // -----------------------------------------------
-
     const content =
         buffer.toString('utf8').trim();
-
-
-    // -----------------------------------------------
-    // EMPTY FILE
-    // -----------------------------------------------
 
     if (!content) {
 
@@ -118,9 +83,6 @@ function validateCSV(
     }
 
 
-    // -----------------------------------------------
-    // SPLIT LINES
-    // -----------------------------------------------
 
     const lines =
         content.split(/\r?\n/);

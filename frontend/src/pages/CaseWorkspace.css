@@ -1785,3 +1785,317 @@ textarea {
     flex-direction: column;
   }
 }
+/* =========================================================
+   NETWORK FOCUS — FINAL READABLE VERSION
+   ========================================================= */
+
+.network-focus-bar {
+  width: 100% !important;
+
+  margin: 0 auto 18px !important;
+
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  align-items: flex-start !important;
+
+  gap: 5px !important;
+}
+
+.network-focus-heading {
+  display: flex !important;
+
+  align-items: baseline !important;
+
+  gap: 10px !important;
+
+  flex-wrap: wrap !important;
+
+  margin: 0 !important;
+}
+
+.network-focus-label {
+  color: #dce5f7 !important;
+
+  font-size: 16px !important;
+
+  font-weight: 600 !important;
+
+  letter-spacing: 0 !important;
+}
+
+.network-focus-name {
+  color: #ffffff !important;
+
+  font-size: 17px !important;
+
+  font-weight: 800 !important;
+}
+
+.network-focus-description {
+  display: block !important;
+
+  color: #8996ad !important;
+
+  font-size: 12px !important;
+
+  line-height: 1.5 !important;
+
+  margin: 0 !important;
+}
+/* =========================================================
+   FULL WIDTH CASE WORKSPACE
+   ========================================================= */
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.workspace-page {
+  width: 100vw;
+  min-width: 100%;
+  min-height: 100vh;
+
+  margin: 0;
+  padding: 0;
+
+  background:
+    radial-gradient(
+      circle at 80% 0%,
+      rgba(115, 92, 255, 0.045),
+      transparent 35%
+    ),
+    #070b12;
+
+  color: #edf2f8;
+
+  overflow-x: hidden;
+}
+
+
+/* =========================================================
+   FULL WIDTH HEADER
+   ========================================================= */
+
+.workspace-header {
+  width: 100%;
+  min-width: 100%;
+
+  min-height: 92px;
+
+  margin: 0;
+  padding: 0 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 35px;
+
+  background: #090e17;
+
+  border-bottom: 1px solid #273449;
+
+  position: relative;
+  z-index: 100;
+
+  box-sizing: border-box;
+}
+
+
+/* Header left */
+
+.workspace-header-left {
+  display: flex;
+  align-items: center;
+
+  gap: 20px;
+
+  min-width: 0;
+
+  flex: 1;
+}
+
+
+/* Navigation */
+
+.workspace-tabs {
+  min-height: 92px;
+
+  display: flex;
+  align-items: stretch;
+
+  gap: 4px;
+
+  flex-shrink: 0;
+
+  background: transparent;
+
+  border: 0;
+
+  padding: 0;
+}
+
+.workspace-tabs button {
+  position: relative;
+
+  min-width: 94px;
+
+  height: 92px;
+
+  padding: 0 18px;
+
+  border: 0;
+
+  border-bottom: 3px solid transparent;
+
+  background: transparent;
+
+  color: #93a0b5;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.workspace-tabs button:hover {
+  color: #ffffff;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.workspace-tabs button.active {
+  color: #f1edff;
+
+  border-bottom-color: #a995ff;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 85%,
+      rgba(169, 149, 255, 0.06)
+    );
+}
+
+
+/* =========================================================
+   CONTENT WIDTH
+   ========================================================= */
+
+/*
+   Header full screen rahega,
+   lekin actual page content readable width mein rahega.
+*/
+
+.workspace-overview,
+.workspace-module,
+.priority-leads-page {
+  width: calc(100% - 90px);
+
+  max-width: 1500px;
+
+  margin-left: auto;
+  margin-right: auto;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   NETWORK FULL WIDTH FIX
+   ========================================================= */
+
+.network-focus-bar {
+  width: calc(100% - 90px);
+
+  max-width: 1500px;
+
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+  .workspace-header {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .workspace-overview,
+  .workspace-module,
+  .priority-leads-page {
+    width: calc(100% - 56px);
+  }
+
+  .network-focus-bar {
+    width: calc(100% - 56px);
+  }
+}
+
+
+@media (max-width: 850px) {
+
+  .workspace-header {
+    min-height: auto;
+
+    padding: 18px 22px;
+
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .workspace-header-left {
+    width: 100%;
+
+    flex-wrap: wrap;
+  }
+
+  .workspace-tabs {
+    width: 100%;
+
+    min-height: 52px;
+
+    overflow-x: auto;
+  }
+
+  .workspace-tabs button {
+    height: 52px;
+
+    min-width: auto;
+
+    padding: 0 14px;
+  }
+}
+
+
+@media (max-width: 600px) {
+
+  .workspace-overview,
+  .workspace-module,
+  .priority-leads-page {
+    width: calc(100% - 30px);
+  }
+
+  .network-focus-bar {
+    width: calc(100% - 30px);
+  }
+}

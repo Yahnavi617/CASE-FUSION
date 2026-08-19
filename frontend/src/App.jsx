@@ -1,6 +1,8 @@
 import './App.css';
 import { useEffect, useRef, useState } from 'react';
 
+import logo from './assets/logo.jpeg';
+
 import Dashboard from './pages/Dashboard';
 import Investigations from './pages/Investigations';
 import NewInvestigation from './pages/NewInvestigation';
@@ -10,17 +12,17 @@ import Login from './pages/Login';
 import Reports from './pages/Reports';
 
 /* ==========================================
-   NEW: TEMPLATES PAGE
+   TEMPLATES PAGE
    ========================================== */
 import Templates from './pages/Templates';
 
 /* ==========================================
-   NEW: PERSONNEL PAGE
+   PERSONNEL PAGE
    ========================================== */
 import Personnel from './pages/Personnel';
 
 /* ==========================================
-   NEW: ENTITIES PAGE
+   ENTITIES PAGE
    ========================================== */
 import Entities from './pages/Entities';
 
@@ -34,8 +36,7 @@ function SettingsPage({
   onThemeToggle,
   onBack,
 }) {
-  const [activeTab, setActiveTab] =
-    useState('Profile');
+  const [activeTab, setActiveTab] = useState('Profile');
 
   const isDark = theme === 'dark';
 
@@ -50,14 +51,9 @@ function SettingsPage({
     button: isDark ? '#172337' : '#eef2f8',
   };
 
-  const [criticalAlerts, setCriticalAlerts] =
-    useState(true);
-
-  const [caseActivity, setCaseActivity] =
-    useState(true);
-
-  const [saved, setSaved] =
-    useState(false);
+  const [criticalAlerts, setCriticalAlerts] = useState(true);
+  const [caseActivity, setCaseActivity] = useState(true);
+  const [saved, setSaved] = useState(false);
 
   const saveChanges = () => {
     setSaved(true);
@@ -82,8 +78,7 @@ function SettingsPage({
         minHeight: 'calc(100vh - 86px)',
         width: '100%',
         boxSizing: 'border-box',
-        padding:
-          '34px clamp(22px, 5vw, 72px) 70px',
+        padding: '34px clamp(22px, 5vw, 72px) 70px',
         background: settingsColors.bg,
         color: settingsColors.text,
       }}
@@ -124,8 +119,7 @@ function SettingsPage({
             <h1
               style={{
                 margin: 0,
-                fontSize:
-                  'clamp(30px, 4vw, 42px)',
+                fontSize: 'clamp(30px, 4vw, 42px)',
                 lineHeight: 1.1,
               }}
             >
@@ -169,8 +163,7 @@ function SettingsPage({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns:
-              '190px minmax(0, 1fr)',
+            gridTemplateColumns: '190px minmax(0, 1fr)',
             gap: 14,
             alignItems: 'start',
           }}
@@ -195,9 +188,7 @@ function SettingsPage({
               <button
                 key={tab}
                 type="button"
-                onClick={() =>
-                  setActiveTab(tab)
-                }
+                onClick={() => setActiveTab(tab)}
                 style={{
                   width: '100%',
                   textAlign: 'left',
@@ -267,8 +258,7 @@ function SettingsPage({
                   <div
                     style={{
                       height: 1,
-                      background:
-                        settingsColors.border,
+                      background: settingsColors.border,
                       marginBottom: 20,
                     }}
                   />
@@ -342,8 +332,7 @@ function SettingsPage({
                           key={label}
                           style={{
                             display: 'flex',
-                            flexDirection:
-                              'column',
+                            flexDirection: 'column',
                             gap: 8,
                             gridColumn:
                               label ===
@@ -358,12 +347,9 @@ function SettingsPage({
                           <span
                             style={{
                               fontSize: 11,
-                              letterSpacing:
-                                '0.12em',
-                              color:
-                                settingsColors.muted,
-                              textTransform:
-                                'uppercase',
+                              letterSpacing: '0.12em',
+                              color: settingsColors.muted,
+                              textTransform: 'uppercase',
                             }}
                           >
                             {label}
@@ -373,18 +359,14 @@ function SettingsPage({
                             defaultValue={value}
                             style={{
                               width: '100%',
-                              boxSizing:
-                                'border-box',
+                              boxSizing: 'border-box',
                               height: 40,
-                              padding:
-                                '0 12px',
+                              padding: '0 12px',
                               borderRadius: 4,
                               border:
                                 `1px solid ${settingsColors.border}`,
-                              background:
-                                settingsColors.input,
-                              color:
-                                settingsColors.text,
+                              background: settingsColors.input,
+                              color: settingsColors.text,
                               outline: 'none',
                             }}
                           />
@@ -400,8 +382,7 @@ function SettingsPage({
                   <div
                     style={{
                       display: 'flex',
-                      justifyContent:
-                        'flex-end',
+                      justifyContent: 'flex-end',
                       alignItems: 'center',
                       gap: 14,
                       marginTop: 22,
@@ -425,13 +406,10 @@ function SettingsPage({
                       style={{
                         border:
                           `1px solid ${settingsColors.border}`,
-                        background:
-                          settingsColors.button,
-                        color:
-                          settingsColors.text,
+                        background: settingsColors.button,
+                        color: settingsColors.text,
                         borderRadius: 4,
-                        padding:
-                          '10px 16px',
+                        padding: '10px 16px',
                         cursor: 'pointer',
                       }}
                     >
@@ -459,8 +437,7 @@ function SettingsPage({
                   <p
                     style={{
                       margin: '0 0 18px',
-                      color:
-                        settingsColors.muted,
+                      color: settingsColors.muted,
                       fontSize: 13,
                     }}
                   >
@@ -472,8 +449,7 @@ function SettingsPage({
                   <div
                     style={{
                       height: 1,
-                      background:
-                        settingsColors.border,
+                      background: settingsColors.border,
                       marginBottom: 4,
                     }}
                   />
@@ -505,8 +481,7 @@ function SettingsPage({
                           minHeight: 78,
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent:
-                            'space-between',
+                          justifyContent: 'space-between',
                           gap: 20,
                           borderBottom:
                             '1px solid #24324a',
@@ -526,8 +501,7 @@ function SettingsPage({
 
                           <div
                             style={{
-                              color:
-                                settingsColors.muted,
+                              color: settingsColors.muted,
                               fontSize: 12,
                               marginTop: 5,
                             }}
@@ -541,9 +515,7 @@ function SettingsPage({
                         <button
                           type="button"
                           aria-pressed={enabled}
-                          onClick={() =>
-                            setter(!enabled)
-                          }
+                          onClick={() => setter(!enabled)}
                           style={{
                             width: 48,
                             height: 26,
@@ -604,8 +576,7 @@ function SettingsPage({
 
                 <p
                   style={{
-                    color:
-                      settingsColors.muted,
+                    color: settingsColors.muted,
                     fontSize: 13,
                     lineHeight: 1.6,
                   }}
@@ -635,8 +606,7 @@ function SettingsPage({
 
                 <p
                   style={{
-                    color:
-                      settingsColors.muted,
+                    color: settingsColors.muted,
                     fontSize: 13,
                   }}
                 >
@@ -652,13 +622,10 @@ function SettingsPage({
                     marginTop: 10,
                     border:
                       `1px solid ${settingsColors.border}`,
-                    background:
-                      settingsColors.button,
-                    color:
-                      settingsColors.text,
+                    background: settingsColors.button,
+                    color: settingsColors.text,
                     borderRadius: 5,
-                    padding:
-                      '11px 16px',
+                    padding: '11px 16px',
                     cursor: 'pointer',
                   }}
                 >
@@ -689,8 +656,7 @@ function SettingsPage({
 
                 <p
                   style={{
-                    color:
-                      settingsColors.muted,
+                    color: settingsColors.muted,
                     fontSize: 13,
                     lineHeight: 1.6,
                   }}
@@ -720,32 +686,26 @@ function SettingsPage({
 
 function App() {
 
-  const [user, setUser] =
-    useState(null);
+  const [user, setUser] = useState(null);
 
-  const [page, setPage] =
-    useState('dashboard');
+  const [page, setPage] = useState('dashboard');
 
   const [selectedCaseId, setSelectedCaseId] =
     useState(null);
 
-  const [theme, setTheme] =
-    useState(() => {
-      return (
-        localStorage.getItem(
-          'casefusion_theme'
-        ) || 'dark'
-      );
-    });
+  const [theme, setTheme] = useState(() => {
+    return (
+      localStorage.getItem('casefusion_theme') ||
+      'dark'
+    );
+  });
 
   const [profileOpen, setProfileOpen] =
     useState(false);
 
-  const [, setSettingsOpen] =
-    useState(false);
+  const [, setSettingsOpen] = useState(false);
 
-  const profileRef =
-    useRef(null);
+  const profileRef = useRef(null);
 
 
   /* =====================================================
@@ -755,9 +715,7 @@ function App() {
   useEffect(() => {
 
     const storedUser =
-      localStorage.getItem(
-        'casefusion_user'
-      );
+      localStorage.getItem('casefusion_user');
 
     if (storedUser) {
 
@@ -1021,7 +979,7 @@ function App() {
 
 
   /* =====================================================
-     NEW: ENTITIES NAVIGATION
+     ENTITIES NAVIGATION
      ===================================================== */
 
   function handleOpenEntities() {
@@ -1058,9 +1016,7 @@ function App() {
      ALERT NAVIGATION
      ===================================================== */
 
-  function handleAlertsNavigation(
-    destination
-  ) {
+  function handleAlertsNavigation(destination) {
 
     switch (destination) {
 
@@ -1123,8 +1079,7 @@ function App() {
     }
 
 
-    let actualCaseId =
-      caseData;
+    let actualCaseId = caseData;
 
 
     if (
@@ -1167,8 +1122,7 @@ function App() {
     }
 
 
-    actualCaseId =
-      String(actualCaseId);
+    actualCaseId = String(actualCaseId);
 
 
     console.log(
@@ -1177,9 +1131,7 @@ function App() {
     );
 
 
-    setSelectedCaseId(
-      actualCaseId
-    );
+    setSelectedCaseId(actualCaseId);
 
     setPage('case');
 
@@ -1190,9 +1142,7 @@ function App() {
      CASE CREATED
      ===================================================== */
 
-  function handleCaseCreated(
-    newCase
-  ) {
+  function handleCaseCreated(newCase) {
 
     if (newCase?.caseId) {
 
@@ -1263,19 +1213,11 @@ function App() {
   if (page === 'alerts') {
 
     return (
-      <div
-        className={`theme-${theme}`}
-      >
+      <div className={`theme-${theme}`}>
 
         <Alerts
-          onBack={
-            handleBackToDashboard
-          }
-
-          onNavigate={
-            handleAlertsNavigation
-          }
-
+          onBack={handleBackToDashboard}
+          onNavigate={handleAlertsNavigation}
         />
 
       </div>
@@ -1302,15 +1244,19 @@ function App() {
         <button
           type="button"
           className="global-brand"
-          onClick={
-            handleBackToDashboard
-          }
+          onClick={handleBackToDashboard}
           aria-label="Go to CASE-FUSION dashboard"
         >
 
-          <span className="global-brand-mark">
-            C
-          </span>
+          {/* ============================================
+              CASE-FUSION LOGO
+              ============================================ */}
+
+          <img
+            src={logo}
+            alt="CASE-FUSION logo"
+            className="global-brand-logo"
+          />
 
           <span className="global-brand-text">
 
@@ -1336,9 +1282,7 @@ function App() {
           <button
             type="button"
             className="theme-toggle-button"
-            onClick={
-              handleThemeToggle
-            }
+            onClick={handleThemeToggle}
             aria-label={
               theme === 'dark'
                 ? 'Switch to light theme'
@@ -1366,13 +1310,9 @@ function App() {
             <button
               type="button"
               className="global-avatar-button"
-              onClick={
-                handleProfileToggle
-              }
+              onClick={handleProfileToggle}
               aria-label="Open investigator profile"
-              aria-expanded={
-                profileOpen
-              }
+              aria-expanded={profileOpen}
             >
 
               <span className="global-avatar">
@@ -1436,9 +1376,7 @@ function App() {
                 <button
                   type="button"
                   className="profile-logout-button"
-                  onClick={
-                    handleLogout
-                  }
+                  onClick={handleLogout}
                 >
                   Logout
                 </button>
@@ -1497,8 +1435,6 @@ function App() {
             onOpenPersonnel={
               handleOpenPersonnel
             }
-
-            /* NEW */
 
             onOpenEntities={
               handleOpenEntities
@@ -1684,9 +1620,7 @@ function App() {
         )}
 
 
-        {/* ================================================
-            NEW: ENTITIES
-            ================================================ */}
+        {/* ENTITIES */}
 
         {page === 'entities' && (
 

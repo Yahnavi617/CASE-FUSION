@@ -1,0 +1,886 @@
+/* =========================================================
+   CASE-FUSION
+   ENTITY RELATIONSHIP NETWORK
+   COMPLETE CSS
+   ========================================================= */
+
+.entity-network-card {
+  width: 100%;
+  margin-top: 24px;
+  padding: 26px 28px 20px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #202c3f;
+  border-radius: 12px;
+
+  background:
+    radial-gradient(
+      circle at 50% 48%,
+      rgba(95, 79, 190, 0.07),
+      transparent 42%
+    ),
+    #080e17;
+
+  color: #edf2f8;
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.entity-network-header {
+  width: 100%;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 25px;
+
+  margin-bottom: 20px;
+}
+
+.entity-network-header > div:first-child {
+  min-width: 0;
+}
+
+.entity-network-eyebrow {
+  margin-bottom: 8px;
+
+  color: #887aff;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1.7px;
+
+  line-height: 1.2;
+
+  text-transform: uppercase;
+}
+
+.entity-network-header h2 {
+  margin: 0;
+
+  color: #f2f5fb;
+
+  font-size: 20px;
+  font-weight: 800;
+
+  line-height: 1.3;
+}
+
+.entity-network-header p {
+  margin: 6px 0 0;
+
+  color: #77869d;
+
+  font-size: 12px;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   COUNTS
+   ========================================================= */
+
+.entity-network-counts {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  flex-shrink: 0;
+}
+
+.entity-network-counts span {
+  min-height: 30px;
+
+  padding: 0 11px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #27344a;
+
+  border-radius: 6px;
+
+  background: #0c1420;
+
+  color: #8997ad;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   GRAPH CONTAINER
+   ========================================================= */
+
+.entity-network-graph {
+  position: relative;
+
+  width: 100%;
+
+  height: 405px;
+  min-height: 405px;
+
+  border: 1px solid #273449;
+
+  border-radius: 10px;
+
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(94, 79, 190, 0.08),
+      transparent 27%
+    ),
+    linear-gradient(
+      145deg,
+      #09111b,
+      #070d15
+    );
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   GRAPH BACKGROUND RINGS
+   ========================================================= */
+
+.entity-network-graph::before {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 300px;
+  height: 300px;
+
+  transform:
+    translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  border: 1px solid
+    rgba(126, 107, 255, 0.08);
+
+  box-shadow:
+    0 0 80px
+      rgba(99, 78, 220, 0.08);
+
+  pointer-events: none;
+}
+
+.entity-network-graph::after {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 210px;
+  height: 210px;
+
+  transform:
+    translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  border: 1px solid
+    rgba(126, 107, 255, 0.07);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   SVG
+   ========================================================= */
+
+.entity-network-svg {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  z-index: 1;
+
+  overflow: visible;
+}
+
+
+/* =========================================================
+   CONNECTION LINES
+   ========================================================= */
+
+.entity-edge {
+  fill: none;
+
+  stroke-width: 0.8;
+
+  vector-effect:
+    non-scaling-stroke;
+}
+
+.entity-edge.edge-financial {
+  stroke: #8174ff;
+}
+
+.entity-edge.edge-communication {
+  stroke: #5dbdf5;
+}
+
+.entity-edge.edge-device {
+  stroke: #59cfa1;
+}
+
+.entity-edge.edge-default {
+  stroke: #56637b;
+}
+
+
+/* =========================================================
+   CONNECTION MARKERS
+   ========================================================= */
+
+.entity-edge-marker {
+  fill: #0b1020;
+
+  stroke-width: 0.8;
+
+  vector-effect:
+    non-scaling-stroke;
+}
+
+.entity-edge-marker.marker-financial {
+  stroke: #8174ff;
+}
+
+.entity-edge-marker.marker-communication {
+  stroke: #5dbdf5;
+}
+
+.entity-edge-marker.marker-device {
+  stroke: #59cfa1;
+}
+
+.entity-edge-marker.marker-default {
+  stroke: #56637b;
+}
+
+.entity-edge-marker-inner {
+  fill: #edf2ff;
+}
+
+
+/* =========================================================
+   CENTER ENTITY
+   ========================================================= */
+
+.entity-network-center {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  z-index: 4;
+
+  width: 150px;
+  height: 150px;
+
+  transform:
+    translate(-50%, -50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Outer glow rings */
+
+.entity-network-center::before,
+.entity-network-center::after {
+  content: "";
+
+  position: absolute;
+
+  border-radius: 50%;
+
+  border: 1px solid
+    rgba(122, 105, 255, 0.10);
+
+  pointer-events: none;
+}
+
+.entity-network-center::before {
+  width: 190px;
+  height: 190px;
+}
+
+.entity-network-center::after {
+  width: 250px;
+  height: 250px;
+}
+
+
+/* Main circle */
+
+.entity-center-ring {
+  width: 122px;
+  height: 122px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  border: 1px solid #8174ff;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(83, 67, 188, 0.28),
+      rgba(12, 17, 31, 0.98) 70%
+    );
+
+  box-shadow:
+    0 0 0 1px
+      rgba(129, 116, 255, 0.08),
+
+    0 0 35px
+      rgba(111, 91, 255, 0.20);
+}
+
+.entity-center-ring span {
+  margin-bottom: 7px;
+
+  color: #9c8cff;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 7px;
+  font-weight: 800;
+
+  letter-spacing: 1.3px;
+}
+
+.entity-center-ring strong {
+  max-width: 105px;
+
+  color: #f3f6fb;
+
+  font-size: 15px;
+  font-weight: 800;
+
+  line-height: 1.2;
+
+  overflow-wrap: anywhere;
+}
+
+.entity-center-ring small {
+  margin-top: 6px;
+
+  color: #68768d;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 7px;
+}
+
+
+/* =========================================================
+   ENTITY POSITION
+   ========================================================= */
+
+.entity-network-node-position {
+  position: absolute;
+
+  z-index: 5;
+
+  transform:
+    translate(-50%, -50%);
+}
+
+
+/* =========================================================
+   ENTITY NODE CARD
+   ========================================================= */
+
+.entity-network-node {
+  width: 125px;
+  min-height: 104px;
+
+  padding: 12px 10px;
+
+  box-sizing: border-box;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  border: 1px solid #2b3b52;
+
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #111b29,
+      #0c1521
+    );
+
+  box-shadow:
+    0 12px 25px
+      rgba(0, 0, 0, 0.20);
+}
+
+.entity-node-label {
+  margin-bottom: 6px;
+
+  color: #74849c;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 7px;
+  font-weight: 800;
+
+  letter-spacing: 1.1px;
+}
+
+.entity-network-node strong {
+  max-width: 105px;
+
+  color: #eef3fa;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  line-height: 1.25;
+
+  overflow-wrap: anywhere;
+}
+
+.entity-network-node small {
+  margin-top: 5px;
+
+  color: #62718a;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 7px;
+}
+
+
+/* =========================================================
+   ENTITY TAGS
+   ========================================================= */
+
+.entity-network-tags {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  flex-wrap: wrap;
+
+  margin-top: 8px;
+}
+
+.entity-tag {
+  padding: 3px 6px;
+
+  border-radius: 4px;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size: 6px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+
+/* FINANCIAL */
+
+.entity-tag.tag-financial {
+  color: #a99fff;
+
+  background:
+    rgba(116, 101, 255, 0.12);
+
+  border: 1px solid
+    rgba(116, 101, 255, 0.25);
+}
+
+
+/* COMMUNICATION */
+
+.entity-tag.tag-communication {
+  color: #79cfff;
+
+  background:
+    rgba(77, 182, 242, 0.11);
+
+  border: 1px solid
+    rgba(77, 182, 242, 0.25);
+}
+
+
+/* SHARED DEVICE */
+
+.entity-tag.tag-device {
+  color: #73dfb2;
+
+  background:
+    rgba(73, 207, 157, 0.11);
+
+  border: 1px solid
+    rgba(73, 207, 157, 0.25);
+}
+
+
+/* DEFAULT */
+
+.entity-tag.tag-default {
+  color: #9ba7b9;
+
+  background:
+    rgba(130, 145, 165, 0.10);
+
+  border: 1px solid
+    rgba(130, 145, 165, 0.20);
+}
+
+
+/* =========================================================
+   LEGEND
+   ========================================================= */
+
+.entity-network-legend {
+  display: flex;
+
+  align-items: center;
+
+  gap: 22px;
+
+  padding-top: 14px;
+}
+
+.entity-network-legend > div {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: #7d8ba1;
+
+  font-size: 10px;
+}
+
+.legend-dot {
+  width: 7px;
+  height: 7px;
+
+  display: inline-block;
+
+  border-radius: 50%;
+}
+
+.legend-dot.financial {
+  background: #8174ff;
+}
+
+.legend-dot.communication {
+  background: #5dbdf5;
+}
+
+.legend-dot.device {
+  background: #59cfa1;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.entity-network-state {
+  min-height: 300px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  color: #7f8da3;
+
+  font-size: 13px;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.entity-network-error {
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.entity-network-error p {
+  margin: 0;
+}
+
+.entity-network-error button {
+  min-height: 36px;
+
+  padding: 0 14px;
+
+  border: 1px solid #3d4d67;
+
+  border-radius: 6px;
+
+  background: #111b29;
+
+  color: #dbe3ef;
+
+  cursor: pointer;
+}
+
+.entity-network-error button:hover {
+  border-color: #8b7cff;
+
+  color: #ffffff;
+
+  background: #171d31;
+}
+
+
+/* =========================================================
+   HOVER EFFECTS
+   ========================================================= */
+
+.entity-network-node {
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.entity-network-node:hover {
+  transform: translateY(-2px);
+
+  border-color: #526582;
+
+  box-shadow:
+    0 15px 30px
+      rgba(0, 0, 0, 0.28),
+
+    0 0 20px
+      rgba(101, 88, 210, 0.08);
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+  .entity-network-graph {
+    height: 390px;
+    min-height: 390px;
+  }
+
+  .entity-network-node {
+    width: 115px;
+  }
+}
+
+
+@media (max-width: 900px) {
+
+  .entity-network-card {
+    padding: 21px 20px 17px;
+  }
+
+  .entity-network-header {
+    flex-direction: column;
+  }
+
+  .entity-network-counts {
+    width: 100%;
+  }
+
+  .entity-network-graph {
+    height: 380px;
+    min-height: 380px;
+  }
+
+  .entity-network-node {
+    width: 105px;
+  }
+}
+
+
+@media (max-width: 650px) {
+
+  .entity-network-header h2 {
+    font-size: 17px;
+  }
+
+  .entity-network-header p {
+    font-size: 10px;
+  }
+
+  .entity-network-graph {
+    height: 430px;
+    min-height: 430px;
+  }
+
+  .entity-network-center {
+    width: 115px;
+    height: 115px;
+  }
+
+  .entity-center-ring {
+    width: 92px;
+    height: 92px;
+  }
+
+  .entity-center-ring strong {
+    font-size: 11px;
+  }
+
+  .entity-network-node {
+    width: 88px;
+    min-height: 80px;
+
+    padding: 8px 6px;
+  }
+
+  .entity-network-node strong {
+    font-size: 8px;
+
+    max-width: 75px;
+  }
+
+  .entity-network-tags {
+    margin-top: 5px;
+  }
+
+  .entity-tag {
+    font-size: 5px;
+
+    padding: 2px 4px;
+  }
+
+  .entity-network-legend {
+    flex-wrap: wrap;
+
+    gap: 12px;
+  }
+}
+
+
+@media (max-width: 450px) {
+
+  .entity-network-card {
+    padding: 17px 14px 14px;
+  }
+
+  .entity-network-counts span {
+    font-size: 8px;
+  }
+
+  .entity-network-graph {
+    height: 450px;
+    min-height: 450px;
+  }
+
+  .entity-network-node {
+    width: 76px;
+
+    min-height: 72px;
+  }
+
+  .entity-network-node strong {
+    font-size: 7px;
+  }
+
+  .entity-network-node small,
+  .entity-node-label {
+    font-size: 5px;
+  }
+
+  .entity-center-ring span {
+    font-size: 5px;
+  }
+
+  .entity-center-ring strong {
+    font-size: 9px;
+  }
+
+  .entity-center-ring small {
+    font-size: 5px;
+  }
+}

@@ -5,6 +5,7 @@ import {
 } from 'react';
 
 import NetworkGraph from '../components/NetworkGraph';
+import EntityRelationshipNetwork from '../components/EntityRelationshipNetwork';
 import LeadExplanation from '../components/LeadExplanation';
 import InvestigationIntel from '../components/InvestigationIntel';
 
@@ -21,35 +22,21 @@ function CaseWorkspace({
   caseId,
   onBack,
 }) {
-  const [caseInfo, setCaseInfo] =
-    useState(null);
+  const [caseInfo, setCaseInfo] = useState(null);
+  const [leads, setLeads] = useState([]);
 
-  const [leads, setLeads] =
-    useState([]);
+  const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [networkLead, setNetworkLead] = useState(null);
 
-  const [analyzing, setAnalyzing] =
-    useState(false);
+  const [error, setError] = useState('');
 
-  const [selectedLead, setSelectedLead] =
-    useState(null);
+  const [riskFilter, setRiskFilter] = useState('all');
+  const [scoreSort, setScoreSort] = useState('high-to-low');
 
-  const [networkLead, setNetworkLead] =
-    useState(null);
-
-  const [error, setError] =
-    useState('');
-
-  const [riskFilter, setRiskFilter] =
-    useState('all');
-
-  const [scoreSort, setScoreSort] =
-    useState('high-to-low');
-
-  const [activeTab, setActiveTab] =
-    useState('overview');
+  const [activeTab, setActiveTab] = useState('overview');
 
 
   /* =====================================================
@@ -72,11 +59,9 @@ function CaseWorkspace({
       setLoading(true);
       setError('');
 
-      const caseResponse =
-        await getCase(caseId);
+      const caseResponse = await getCase(caseId);
 
-      const loadedCase =
-        caseResponse?.case;
+      const loadedCase = caseResponse?.case;
 
       if (!loadedCase) {
         throw new Error(
@@ -87,19 +72,16 @@ function CaseWorkspace({
       setCaseInfo(loadedCase);
 
       if (
-        String(
-          loadedCase.status || ''
-        ).toLowerCase() === 'analyzed'
+        String(loadedCase.status || '').toLowerCase() ===
+        'analyzed'
       ) {
-        const leadsResponse =
-          await getLeads(caseId);
+        const leadsResponse = await getLeads(caseId);
 
-        const loadedLeads =
-          Array.isArray(
-            leadsResponse?.leads
-          )
-            ? leadsResponse.leads
-            : [];
+        const loadedLeads = Array.isArray(
+          leadsResponse?.leads
+        )
+          ? leadsResponse.leads
+          : [];
 
         setLeads(loadedLeads);
 
@@ -127,7 +109,7 @@ function CaseWorkspace({
 
 
   /* =====================================================
-     ANALYZE
+     ANALYZE CASE
   ===================================================== */
 
   async function handleAnalyze() {
@@ -139,15 +121,13 @@ function CaseWorkspace({
       setAnalyzing(true);
       setError('');
 
-      const response =
-        await analyzeCase(caseId);
+      const response = await analyzeCase(caseId);
 
-      const analyzedLeads =
-        Array.isArray(
-          response?.leads
-        )
-          ? response.leads
-          : [];
+      const analyzedLeads = Array.isArray(
+        response?.leads
+      )
+        ? response.leads
+        : [];
 
       setLeads(analyzedLeads);
 
@@ -155,20 +135,14 @@ function CaseWorkspace({
         analyzedLeads[0] || null
       );
 
-      setCaseInfo(
-        (previous) => ({
-          ...(previous || {}),
-
-          status: 'analyzed',
-
-          analyzedAt:
-            new Date().toISOString(),
-
-          leadCount:
-            response?.count ??
-            analyzedLeads.length,
-        })
-      );
+      setCaseInfo((previous) => ({
+        ...(previous || {}),
+        status: 'analyzed',
+        analyzedAt: new Date().toISOString(),
+        leadCount:
+          response?.count ??
+          analyzedLeads.length,
+      }));
 
       setActiveTab('leads');
     } catch (err) {
@@ -195,12 +169,15 @@ function CaseWorkspace({
     setSelectedLead(lead);
   }
 
+
   function closeLeadWhy() {
     setSelectedLead(null);
   }
 
+
   function handleNetworkSelect(lead) {
     setNetworkLead(lead);
+    setActiveTab('network');
   }
 
 
@@ -208,95 +185,81 @@ function CaseWorkspace({
      RISK SUMMARY
   ===================================================== */
 
-  const riskSummary =
-    useMemo(() => {
-      const summary = {
-        high: 0,
-        medium: 0,
-        low: 0,
-      };
+  const riskSummary = useMemo(() => {
+    const summary = {
+      high: 0,
+      medium: 0,
+      low: 0,
+    };
 
-      leads.forEach(
-        (lead) => {
-          const score =
-            Number(lead?.score) || 0;
+    leads.forEach((lead) => {
+      const score =
+        Number(lead?.score) || 0;
 
-          if (score >= 80) {
-            summary.high += 1;
-          } else if (score >= 50) {
-            summary.medium += 1;
-          } else {
-            summary.low += 1;
-          }
-        }
-      );
+      if (score >= 80) {
+        summary.high += 1;
+      } else if (score >= 50) {
+        summary.medium += 1;
+      } else {
+        summary.low += 1;
+      }
+    });
 
-      return summary;
-    }, [leads]);
+    return summary;
+  }, [leads]);
 
 
   /* =====================================================
-     FILTER + SORT
+     FILTER + SORT LEADS
   ===================================================== */
 
-  const displayedLeads =
-    useMemo(() => {
-      const filtered =
-        leads.filter(
-          (lead) => {
-            const score =
-              Number(lead?.score) || 0;
+  const displayedLeads = useMemo(() => {
+    const filtered = leads.filter((lead) => {
+      const score =
+        Number(lead?.score) || 0;
 
-            if (riskFilter === 'high') {
-              return score >= 80;
-            }
+      if (riskFilter === 'high') {
+        return score >= 80;
+      }
 
-            if (riskFilter === 'medium') {
-              return (
-                score >= 50 &&
-                score < 80
-              );
-            }
+      if (riskFilter === 'medium') {
+        return score >= 50 && score < 80;
+      }
 
-            if (riskFilter === 'low') {
-              return score < 50;
-            }
+      if (riskFilter === 'low') {
+        return score < 50;
+      }
 
-            return true;
-          }
-        );
+      return true;
+    });
 
-      return [...filtered].sort(
-        (a, b) => {
-          const scoreA =
-            Number(a?.score) || 0;
+    return [...filtered].sort((a, b) => {
+      const scoreA =
+        Number(a?.score) || 0;
 
-          const scoreB =
-            Number(b?.score) || 0;
+      const scoreB =
+        Number(b?.score) || 0;
 
-          return scoreSort ===
-            'low-to-high'
-            ? scoreA - scoreB
-            : scoreB - scoreA;
-        }
-      );
-    }, [
-      leads,
-      riskFilter,
-      scoreSort,
-    ]);
+      return scoreSort === 'low-to-high'
+        ? scoreA - scoreB
+        : scoreB - scoreA;
+    });
+  }, [
+    leads,
+    riskFilter,
+    scoreSort,
+  ]);
 
 
   const featuredLead =
     displayedLeads[0] || null;
 
   const secondaryLeads =
-    displayedLeads
-      .slice(1, 4);
+    displayedLeads.slice(1, 4);
 
 
   /* =====================================================
-     HELPERS
+     RISK HELPER
   ===================================================== */
 
   function getRisk(score) {
@@ -324,16 +287,25 @@ function CaseWorkspace({
   }
 
 
+  /* =====================================================
+     SIGNAL HELPERS
+  ===================================================== */
+
   function getSignalValue(
     signals,
     key
   ) {
+    const rawValue =
+      Number(signals?.[key]);
+
+    if (Number.isNaN(rawValue)) {
+      return 0;
+    }
+
     return Math.round(
-      (
-        Number(
-          signals?.[key]
-        ) || 0
-      ) * 100
+      rawValue <= 1
+        ? rawValue * 100
+        : rawValue
     );
   }
 
@@ -352,7 +324,7 @@ function CaseWorkspace({
 
 
   /* =====================================================
-     EXPORT CSV
+     EXPORT LEADS
   ===================================================== */
 
   function handleExportLeads() {
@@ -373,88 +345,83 @@ function CaseWorkspace({
       'Reasons',
     ];
 
-    const rows =
-      leads.map(
-        (lead) => {
-          const score =
-            Number(lead?.score) || 0;
+    const rows = leads.map((lead) => {
+      const score =
+        Number(lead?.score) || 0;
 
-          const risk =
-            score >= 80
-              ? 'High'
-              : score >= 50
-                ? 'Medium'
-                : 'Low';
+      const risk =
+        score >= 80
+          ? 'High'
+          : score >= 50
+            ? 'Medium'
+            : 'Low';
 
-          const signals =
-            lead?.signals || {};
+      const signals =
+        lead?.signals || {};
 
-          return [
-            lead?.id || '',
-            lead?.label || '',
-            score,
-            risk,
-            Math.round(
-              Number(
-                signals.financial
-              ) * 100
-            ) || 0,
-            Math.round(
-              Number(
-                signals.communication
-              ) * 100
-            ) || 0,
-            Math.round(
-              Number(
-                signals.crossSource
-              ) * 100
-            ) || 0,
-            Math.round(
-              Number(
-                signals.temporal
-              ) * 100
-            ) || 0,
-            Math.round(
-              Number(
-                signals.centrality
-              ) * 100
-            ) || 0,
-            (
-              lead?.reasons || []
-            ).join(' | '),
-          ];
-        }
-      );
+      return [
+        lead?.id || '',
+        lead?.label || '',
+        score,
+        risk,
 
-    const escapeCsv =
-      (value) =>
-        `"${String(
-          value ?? ''
-        ).replace(
-          /"/g,
-          '""'
-        )}"`;
+        getSignalValue(
+          signals,
+          'financial'
+        ),
+
+        getSignalValue(
+          signals,
+          'communication'
+        ),
+
+        getSignalValue(
+          signals,
+          'crossSource'
+        ),
+
+        getSignalValue(
+          signals,
+          'temporal'
+        ),
+
+        getSignalValue(
+          signals,
+          'centrality'
+        ),
+
+        (
+          lead?.reasons || []
+        ).join(' | '),
+      ];
+    });
+
+    const escapeCsv = (value) =>
+      `"${String(
+        value ?? ''
+      ).replace(
+        /"/g,
+        '""'
+      )}"`;
 
     const csv = [
       headers,
       ...rows,
     ]
-      .map(
-        (row) =>
-          row
-            .map(escapeCsv)
-            .join(',')
+      .map((row) =>
+        row
+          .map(escapeCsv)
+          .join(',')
       )
       .join('\n');
 
-    const blob =
-      new Blob(
-        [csv],
-        {
-          type:
-            'text/csv;charset=utf-8;',
-        }
-      );
+    const blob = new Blob(
+      [csv],
+      {
+        type:
+          'text/csv;charset=utf-8;',
+      }
+    );
 
     const url =
       URL.createObjectURL(blob);
@@ -491,9 +458,11 @@ function CaseWorkspace({
   if (loading) {
     return (
       <div className="workspace-page">
+
         <div className="workspace-loading">
           Loading investigation...
         </div>
+
       </div>
     );
   }
@@ -503,10 +472,7 @@ function CaseWorkspace({
      ERROR
   ===================================================== */
 
-  if (
-    error &&
-    !caseInfo
-  ) {
+  if (error && !caseInfo) {
     return (
       <div className="workspace-page">
 
@@ -536,13 +502,15 @@ function CaseWorkspace({
 
 
   /* =====================================================
-     RENDER
+     MAIN
   ===================================================== */
 
   return (
     <div className="workspace-page">
 
-      {/* HEADER */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
       <header className="workspace-header">
 
@@ -555,6 +523,7 @@ function CaseWorkspace({
           >
             ← All Investigations
           </button>
+
 
           <div className="workspace-case-info">
 
@@ -577,6 +546,10 @@ function CaseWorkspace({
 
         </div>
 
+
+        {/* =================================================
+            TABS
+        ================================================== */}
 
         <nav className="workspace-tabs">
 
@@ -610,7 +583,9 @@ function CaseWorkspace({
       </header>
 
 
-      {/* ERROR */}
+      {/* =================================================
+          ERROR
+      ================================================== */}
 
       {error && (
         <div className="workspace-inline-error">
@@ -639,12 +614,15 @@ function CaseWorkspace({
               </h1>
 
               <p>
-                Monitor evidence, relationships,
-                priority leads and intelligence
-                signals for this investigation.
+                Monitor evidence,
+                relationships,
+                priority leads and
+                intelligence signals
+                for this investigation.
               </p>
 
             </div>
+
 
             {!isAnalyzed && (
               <button
@@ -661,6 +639,8 @@ function CaseWorkspace({
 
           </div>
 
+
+          {/* SUMMARY */}
 
           <div className="workspace-summary-grid">
 
@@ -719,6 +699,8 @@ function CaseWorkspace({
           </div>
 
 
+          {/* INTELLIGENCE */}
+
           <div className="workspace-intel-card">
 
             <div>
@@ -732,12 +714,14 @@ function CaseWorkspace({
               </h2>
 
               <p>
-                Unified analysis across telecom,
-                banking, social, device and
-                investigative evidence.
+                Unified analysis across
+                telecom, banking, social,
+                device and investigative
+                evidence.
               </p>
 
             </div>
+
 
             <button
               type="button"
@@ -818,6 +802,7 @@ function CaseWorkspace({
 
                 </div>
 
+
                 <div className="priority-stat priority-stat-danger">
 
                   <strong>
@@ -829,6 +814,7 @@ function CaseWorkspace({
                   </span>
 
                 </div>
+
 
                 <button
                   type="button"
@@ -845,6 +831,8 @@ function CaseWorkspace({
 
           </div>
 
+
+          {/* NOT ANALYZED */}
 
           {!isAnalyzed && (
             <div className="priority-empty-state">
@@ -877,6 +865,8 @@ function CaseWorkspace({
             </div>
           )}
 
+
+          {/* ANALYZED */}
 
           {isAnalyzed && (
             <>
@@ -932,6 +922,7 @@ function CaseWorkspace({
                       )
                     }
                   >
+
                     <option value="high-to-low">
                       Score: High → Low
                     </option>
@@ -939,6 +930,7 @@ function CaseWorkspace({
                     <option value="low-to-high">
                       Score: Low → High
                     </option>
+
                   </select>
 
                 </label>
@@ -961,8 +953,7 @@ function CaseWorkspace({
                 </span>
 
                 <span>
-                  {riskSummary.high}
-                  {' '}
+                  {riskSummary.high}{' '}
                   high risk
                 </span>
 
@@ -995,6 +986,8 @@ function CaseWorkspace({
               ) : (
 
                 <div className="priority-lead-layout">
+
+                  {/* FEATURED */}
 
                   {featuredLead && (
                     <article
@@ -1039,6 +1032,7 @@ function CaseWorkspace({
 
                           </div>
 
+
                           <p className="featured-lead-subtitle">
                             {featuredLead
                               .reasons?.[0] ||
@@ -1064,6 +1058,7 @@ function CaseWorkspace({
                                   className="featured-reason"
                                   key={index}
                                 >
+
                                   <span>
                                     ◉
                                   </span>
@@ -1071,6 +1066,7 @@ function CaseWorkspace({
                                   <p>
                                     {reason}
                                   </p>
+
                                 </div>
                               )
                             )}
@@ -1194,6 +1190,8 @@ function CaseWorkspace({
                   )}
 
 
+                  {/* SECONDARY */}
+
                   <div className="secondary-leads-grid">
 
                     {secondaryLeads.map(
@@ -1206,9 +1204,7 @@ function CaseWorkspace({
 
                         return (
                           <article
-                            key={
-                              lead.id
-                            }
+                            key={lead.id}
                             className={`secondary-lead-card risk-${risk.className} ${
                               networkLead?.id ===
                               lead.id
@@ -1238,6 +1234,7 @@ function CaseWorkspace({
 
                               </div>
 
+
                               <strong className="secondary-lead-score">
                                 {Number(
                                   lead.score
@@ -1266,16 +1263,15 @@ function CaseWorkspace({
                                 Signals
                               </span>
 
+
                               <button
                                 type="button"
                                 onClick={(event) => {
-
                                   event.stopPropagation();
 
                                   handleViewWhy(
                                     lead
                                   );
-
                                 }}
                               >
                                 INSPECT
@@ -1323,6 +1319,7 @@ function CaseWorkspace({
 
             </div>
 
+
             <small>
               Select a lead from Priority Leads
               to change the network focus.
@@ -1334,16 +1331,41 @@ function CaseWorkspace({
           {isAnalyzed &&
           leads.length > 0 ? (
 
-            <NetworkGraph
-              caseId={caseId}
-              selectedLead={
-                networkLead
-              }
-            />
+            <>
+              {/* =================================================
+                  OLD MAP / NETWORK
+                  THIS STAYS
+              ================================================== */}
+
+              <NetworkGraph
+                caseId={caseId}
+                selectedLead={
+                  networkLead
+                }
+              />
+
+
+              {/* =================================================
+                  NEW ENTITY RELATIONSHIP NETWORK
+                  THIS APPEARS BELOW THE OLD MAP
+              ================================================== */}
+
+              <EntityRelationshipNetwork
+                caseId={caseId}
+                selectedLead={
+                  networkLead
+                }
+              />
+
+            </>
 
           ) : (
 
             <div className="priority-empty-state">
+
+              <div className="priority-empty-icon">
+                ◌
+              </div>
 
               <h2>
                 Network unavailable
@@ -1366,6 +1388,7 @@ function CaseWorkspace({
               </button>
 
             </div>
+
           )}
 
         </section>
@@ -1389,7 +1412,7 @@ function CaseWorkspace({
 
 
       {/* =================================================
-          LEAD EXPLANATION MODAL
+          LEAD EXPLANATION
       ================================================== */}
 
       {selectedLead && (

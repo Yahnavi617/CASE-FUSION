@@ -1642,7 +1642,7 @@ export default function InvestigationIntel({
                                         <div
                                             style={{
                                                 color: '#7e8ba5',
-                                                fontSize: 11,
+                                                fontSize: 13,
                                                 marginTop: 10,
                                                 lineHeight: 1.6,
                                             }}

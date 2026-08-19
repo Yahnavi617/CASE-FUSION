@@ -1,7 +1,8 @@
 /* =========================================================
    CASE-FUSION LOGIN
    bg.jpeg native size: 1535 x 1024
-   Stage locked to that exact ratio, letterboxed, centered.
+   Stage fills viewport edge-to-edge, letterboxed on ratio
+   mismatch (no crop, no visible border/gap).
    ========================================================= */
 
 * {
@@ -35,41 +36,37 @@ body {
    ========================================================= */
 
 .login-page {
-  width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+
+  margin: 0;
+  padding: 0;
+
+  background: #06101d;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  padding: 16px;
-
-  background: #06101d;
-
-  overflow: auto;
+  overflow: hidden;
 }
 
 
 /* =========================================================
-   STAGE — simple max-width + aspect-ratio, no vh math,
-   so it can never blow out of the viewport.
+   STAGE — locked to bg.jpeg's exact ratio so nothing crops,
+   background matches page so no visible border/gap.
    ========================================================= */
 
 .login-stage {
   position: relative;
 
-  width: 100%;
-  max-width: 1535px;
+  width: min(100vw, calc(100vh * 1535 / 1024));
+  height: min(100vh, calc(100vw * 1024 / 1535));
 
-  aspect-ratio: 1535 / 1024;
+  margin: 0 auto;
 
-  border-radius: 22px;
-  overflow: hidden;
-
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
-
-  flex-shrink: 0;
+  background: #06101d;
 }
 
 
@@ -132,14 +129,65 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
+  gap: 14px;
 }
 
 
 /* =========================================================
-   LOGIN CARD
+   BOX 1 — HEADING CARD
    ========================================================= */
 
-.login-card {
+.login-heading-card {
+  width: 100%;
+  max-width: 460px;
+
+  padding: 18px 28px;
+
+  border-radius: 15px;
+  border: 1px solid #3b5068;
+
+  background: linear-gradient(145deg, rgba(5, 15, 27, 0.97), rgba(2, 10, 18, 0.98));
+
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.section-label {
+  margin: 0 0 8px;
+
+  color: #6fa8dc;
+
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.login-heading-card h2 {
+  margin: 0;
+
+  color: #f5f7fb;
+
+  font-size: clamp(20px, 2.2vw, 26px);
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.login-heading-card > p:last-child {
+  margin: 8px 0 0;
+
+  color: #91a0b3;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   BOX 2 — FORM CARD
+   ========================================================= */
+
+.login-form-card {
   width: 100%;
   max-width: 460px;
 
@@ -151,45 +199,6 @@ body {
   background: linear-gradient(145deg, rgba(5, 15, 27, 0.97), rgba(2, 10, 18, 0.98));
 
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.55);
-}
-
-
-/* =========================================================
-   HEADING
-   ========================================================= */
-
-.login-heading {
-  margin-bottom: 22px;
-}
-
-.section-label {
-  margin: 0 0 10px;
-
-  color: #a18aff;
-
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 2px;
-}
-
-.login-heading h2 {
-  margin: 0;
-
-  color: #f5f7fb;
-
-  font-size: clamp(22px, 2.4vw, 30px);
-  line-height: 1.15;
-  font-weight: 800;
-}
-
-.login-heading > p:last-child {
-  margin: 10px 0 0;
-
-  color: #91a0b3;
-
-  font-size: 14px;
-  line-height: 1.5;
 }
 
 
@@ -316,9 +325,9 @@ body {
 }
 
 .login-input-wrapper input:focus {
-  border-color: #8d79f3;
+  border-color: #3f8ce8;
 
-  box-shadow: 0 0 0 3px rgba(141, 121, 243, 0.13);
+  box-shadow: 0 0 0 3px rgba(63, 140, 232, 0.15);
 }
 
 
@@ -342,7 +351,7 @@ body {
 
   background: transparent;
 
-  color: #a18df4;
+  color: #6fa8dc;
 
   font-size: 12px;
   font-weight: 700;
@@ -351,7 +360,7 @@ body {
 }
 
 .password-toggle:hover {
-  background: rgba(150, 130, 255, 0.1);
+  background: rgba(63, 140, 232, 0.12);
 }
 
 
@@ -386,7 +395,7 @@ body {
 
   margin: 0;
 
-  accent-color: #8b76ed;
+  accent-color: #3f8ce8;
 }
 
 .login-security {
@@ -399,7 +408,7 @@ body {
 
 
 /* =========================================================
-   LOGIN BUTTON
+   LOGIN BUTTON — matches the page's navy/blue theme
    ========================================================= */
 
 .login-submit {
@@ -412,12 +421,12 @@ body {
 
   gap: 10px;
 
-  border: 1px solid #a08dff;
+  border: 1px solid #4f7fc4;
   border-radius: 9px;
 
-  background: linear-gradient(135deg, #8069ef, #9b87ff);
+  background: linear-gradient(135deg, #14294f, #1c3e78, #2a5cb0);
 
-  color: #0b0a13;
+  color: #eaf1ff;
 
   font-family: inherit;
   font-size: 14px;
@@ -425,13 +434,13 @@ body {
 
   cursor: pointer;
 
-  box-shadow: 0 12px 30px rgba(119, 96, 234, 0.25);
+  box-shadow: 0 12px 30px rgba(20, 60, 130, 0.4);
 
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .login-submit:hover:not(:disabled) {
-  filter: brightness(1.08);
+  filter: brightness(1.15);
   transform: translateY(-1px);
 }
 
@@ -444,8 +453,8 @@ body {
   width: 15px;
   height: 15px;
 
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  border-top-color: #11111a;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #ffffff;
   border-radius: 50%;
 
   animation: login-spin 0.7s linear infinite;
@@ -516,21 +525,13 @@ body {
 
 
 /* =========================================================
-   MOBILE — drop image, plain full-screen card
+   MOBILE
    ========================================================= */
 
 @media (max-width: 700px) {
-  .login-page {
-    padding: 0;
-  }
-
   .login-stage {
-    max-width: none;
-    width: 100%;
-    aspect-ratio: auto;
-    min-height: 100vh;
-    border-radius: 0;
-    box-shadow: none;
+    width: 100vw;
+    height: 100vh;
   }
 
   .login-left {
@@ -542,7 +543,7 @@ body {
     inset: auto;
 
     width: 100%;
-    min-height: 100vh;
+    height: 100%;
 
     background: #06101d;
   }
@@ -552,8 +553,8 @@ body {
     padding: 30px 18px;
   }
 
-  .login-card {
+  .login-heading-card,
+  .login-form-card {
     max-width: 460px;
-    padding: 26px 22px 22px;
   }
 }

@@ -72,13 +72,15 @@ function Login({ onLogin }) {
 
           <div className="login-content">
 
-            <div className="login-card">
+            {/* BOX 1 — Heading */}
+            <div className="login-heading-card">
+              <p className="section-label">SECURE ACCESS</p>
+              <h2>Welcome back</h2>
+              <p>Sign in to access your investigation workspace.</p>
+            </div>
 
-              <div className="login-heading">
-                <p className="section-label">SECURE ACCESS</p>
-                <h2>Welcome back</h2>
-                <p>Sign in to access your investigation workspace.</p>
-              </div>
+            {/* BOX 2 — Form */}
+            <div className="login-form-card">
 
               {error && (
                 <div className="login-error">
